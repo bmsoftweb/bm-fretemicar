@@ -40,7 +40,7 @@ interface Prefs {
 const PADRAO: Prefs = { modo: 'manual', larguras: {}, ordem: [], grade: 'horizontais', visiveis: null };
 const MIN = 50;
 const W_IND = 30;
-const W_ACOES = 96; // w-24
+const W_ACOES = 120; // w-30 (até 4 ícones)
 
 
 interface Props<T> {
@@ -427,7 +427,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
               </th>
             ))}
             {sobra && <th className="w-full border-b border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950" />}
-            <th className="sticky right-0 z-20 w-24 min-w-24 max-w-24 px-3 py-2.5 text-center font-semibold text-stone-600 dark:text-stone-300 border-b border-l border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950">Ações</th>
+            <th className="sticky right-0 z-20 w-30 min-w-30 max-w-30 px-3 py-2.5 text-center font-semibold text-stone-600 dark:text-stone-300 border-b border-l border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950">Ações</th>
           </tr>
         </thead>
         <tbody className={carregando && linhas.length ? 'opacity-60' : ''}>
@@ -458,7 +458,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
                     </td>
                   ))}
                   {sobra && <td className={bB} />}
-                  <td className={`sticky right-0 z-[5] w-24 min-w-24 max-w-24 px-3 py-[7.5px] text-center whitespace-nowrap border-l border-stone-200 dark:border-stone-800 ${bB} ${sel ? 'bg-blue-50 dark:bg-blue-950' : 'bg-white dark:bg-stone-900 group-hover:bg-stone-50 dark:group-hover:bg-stone-800'}`}>
+                  <td className={`sticky right-0 z-[5] w-30 min-w-30 max-w-30 px-3 py-[7.5px] text-center whitespace-nowrap border-l border-stone-200 dark:border-stone-800 ${bB} ${sel ? 'bg-blue-50 dark:bg-blue-950' : 'bg-white dark:bg-stone-900 group-hover:bg-stone-50 dark:group-hover:bg-stone-800'}`}>
                     <div className="flex items-center justify-center gap-0.5">{acoesEmMenu ? <MenuAcoes>{acoes?.(l)}</MenuAcoes> : acoes?.(l)}</div>
                   </td>
                 </tr>
@@ -491,7 +491,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
                 </td>
               ))}
               {sobra && <td className="border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950" />}
-              <td className="sticky right-0 z-20 w-24 min-w-24 max-w-24 border-t border-l border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950" />
+              <td className="sticky right-0 z-20 w-30 min-w-30 max-w-30 border-t border-l border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950" />
             </tr>
           </tfoot>
         )}

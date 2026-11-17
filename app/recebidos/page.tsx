@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Ban, Download, Loader2, RefreshCw, Send, Undo2 } from 'lucide-react';
+import { Ban, Download, FileText, Loader2, RefreshCw, Send, Undo2 } from 'lucide-react';
 import { useRefreshDaTela } from '@/components/LayoutApp';
 import { ListaCrm } from '@/components/ListaCrm';
-import { BotaoAcao } from '@/components/MenuAcoes';
+import { BotaoAcao, MenuAcoes } from '@/components/MenuAcoes';
 import { AvisoErro } from '@/components/AvisoErro';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Campo, GradeCampos, INPUT_CLASS } from '@/components/FormCrm';
@@ -173,6 +173,30 @@ export default function RecebidosPage() {
     }
   };
 
+  // Como o abrirDanfe do bm-nfe: o PDF vira blob e abre na aba (o navegador mostra em vez de baixar).
+  // A aba abre já no clique: depois do await o bloqueador de pop-up barraria.
+  const verDacte = async (l: Recebido) => {
+    const aba = window.open('', '_blank');
+    try {
+      const r = await fetch(`/api/recebidos/${l.id}/dacte`);
+      if (!r.ok) {
+        const t = await r.text();
+        let msg = t;
+        try {
+          msg = JSON.parse(t).error;
+        } catch {}
+        throw new Error(msg || 'Não foi possível gerar o DACTE.');
+      }
+      const url = URL.createObjectURL(await r.blob());
+      if (aba) aba.location.href = url;
+      else window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60_000); // só depois que a aba carregou
+    } catch (e: any) {
+      aba?.close();
+      setAviso({ texto: e.message, tom: 'erro' });
+    }
+  };
+
   // Um por vez (cada lançamento são várias chamadas à BMapi); transportadora nova fica pendente, para confirmar na linha
   const lancarMarcados = async () => {
     setConfirmarLote(false);
@@ -298,10 +322,12 @@ export default function RecebidosPage() {
           { key: 'remetente', label: 'Remetente', largura: 180 },
           { key: 'arquivo', label: 'Arquivo', largura: 200 },
         ]}
-        acoes={(l: Recebido) => (
-          <>
-            {PENDENTES.includes(l.situacao) && (
+        acoes={(l: Recebido) => {
+          const pendente = PENDENTES.includes(l.situacao);
+          const lista = [
+            pendente && (
               <BotaoAcao
+                key="lancar"
                 icone={Send}
                 titulo="Lançar"
                 descricao={`Lança só este CT-e no BMsoft${marca(l.id).financeiro ? ', com a conta a pagar' : ', sem a conta a pagar (Financeiro desmarcado)'}`}
@@ -309,16 +335,15 @@ export default function RecebidosPage() {
                 carregando={lancando === l.id}
                 onClick={() => relancar(l)}
               />
-            )}
-            {PENDENTES.includes(l.situacao) && (
-              <BotaoAcao icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => ignorar(l)} />
-            )}
-            {l.situacao === 'I' && (
-              <BotaoAcao icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => ignorar(l, true)} />
-            )}
-            <BotaoAcao icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />
-          </>
-        )}
+            ),
+            pendente && <BotaoAcao key="ignorar" icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => ignorar(l)} />,
+            l.situacao === 'I' && <BotaoAcao key="designorar" icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => ignorar(l, true)} />,
+            <BotaoAcao key="dacte" icone={FileText} titulo="Ver DACTE" descricao="Abre o DACTE (PDF do CT-e) numa aba nova" onClick={() => verDacte(l)} />,
+            <BotaoAcao key="xml" icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />,
+          ].filter(Boolean);
+          // Até 4 ações ficam soltas; mais que isso, o botão "..." com o menu
+          return lista.length > 4 ? <MenuAcoes>{lista}</MenuAcoes> : <>{lista}</>;
+        }}
       />
 
       {confirmarLote && (

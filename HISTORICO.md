@@ -2,6 +2,14 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.16 — 2026-11-17
+
+- CT-e recebidos: ação "Ver DACTE" abre o PDF do CT-e numa aba nova, gerado na hora do XML guardado (`lib/dacte.ts`,
+  pdfkit + bwip-js, mesmo desenho do DANFE do bm-nfe; rota `GET /api/recebidos/:id/dacte`). Quadros do DACTE retrato:
+  comprovante de entrega, emitente, código de barras, chave, protocolo e QR-Code, participantes e tomador, carga,
+  componentes da prestação, ICMS e IBS/CBS, documentos originários, observações e RNTRC; homologação com tarja.
+- Coluna Ações: até 4 ícones soltos (coluna com 120 px); o menu "..." só a partir de 5.
+
 ## 0.1.15 — 2026-11-17
 
 - Tooltips no visual BMsoft (componente `Dica`, o mesmo do bm-otica) no lugar do tooltip nativo do navegador, no app
