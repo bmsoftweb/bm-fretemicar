@@ -17,6 +17,7 @@ import * as recebidoXml from '../app/api/recebidos/[id]/xml/route.js';
 import * as recebidoLancar from '../app/api/recebidos/[id]/lancar/route.js';
 import * as leitura from '../app/api/leitura/route.js';
 import * as cronLeitura from '../app/api/cron/leitura/route.js';
+import * as vencimentos from '../app/api/vencimentos/route.js';
 
 /**
  * App Express com as rotas /api. Lista fixa (e não varredura da pasta app/) para a Vercel empacotar tudo:
@@ -39,6 +40,7 @@ const ROTAS: [string, Record<string, unknown>][] = [
   ['/api/recebidos/:id/lancar', recebidoLancar],
   ['/api/leitura', leitura],
   ['/api/cron/leitura', cronLeitura],
+  ['/api/vencimentos', vencimentos],
 ];
 const METODOS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 

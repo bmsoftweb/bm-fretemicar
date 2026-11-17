@@ -17,6 +17,8 @@ import { gravarConfigLista, lerConfigListas } from '@/lib/config-listas-cliente'
 export interface ColunaLista<T> {
   key: string;
   label: string;
+  /** Conteúdo do cabeçalho no lugar do label (ex.: checkbox de marcar todas); o label segue no menu de colunas */
+  cabecalho?: React.ReactNode;
   /** numero = à direita; centro = centralizada (datas, Sim/Não); texto = à esquerda */
   alinhar?: 'texto' | 'numero' | 'centro';
   render?: (linha: T) => React.ReactNode;
@@ -79,12 +81,14 @@ interface Props<T> {
   info?: React.ReactNode;
   /** Busca por texto nas linhas (padrão: ligada) */
   buscar?: boolean;
+  /** Recebe as linhas que passam pela busca (de todas as páginas) sempre que mudam: ex. "marcar todas" só nas filtradas */
+  onFiltrar?: (linhas: T[]) => void;
   /** "N por página" e paginação (padrão: ligada). Desligar em árvores e painéis */
   paginar?: boolean;
   className?: string;
 }
 
-export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenavel = true, carregando, vazio, onEditar, acoes, acoesEmMenu, detalhe, expansivel, aberta, onAlternar, rodape, ordemExterna, onOrdenar, extraMenu, onNovo, rotuloNovo = 'Novo', barraExtra, info, buscar = true, paginar = true, className = 'max-h-[calc(100vh-var(--altura-topo))]' }: Props<T>) {
+export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenavel = true, carregando, vazio, onEditar, acoes, acoesEmMenu, detalhe, expansivel, aberta, onAlternar, rodape, ordemExterna, onOrdenar, extraMenu, onNovo, rotuloNovo = 'Novo', barraExtra, info, buscar = true, onFiltrar, paginar = true, className = 'max-h-[calc(100vh-var(--altura-topo))]' }: Props<T>) {
   const [prefs, setPrefs] = useState<Prefs>(PADRAO);
   const [ordem, setOrdem] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
   const [sobra, setSobra] = useState(true);
@@ -124,6 +128,9 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
     const t = busca.trim().toLowerCase();
     return t ? linhasOrd.filter((l) => JSON.stringify(Object.values(l as any)).toLowerCase().includes(t)) : linhasOrd;
   }, [linhasOrd, busca]);
+  useEffect(() => {
+    onFiltrar?.(filtradas);
+  }, [filtradas]); // eslint-disable-line react-hooks/exhaustive-deps
   const totalPaginas = paginar ? Math.max(1, Math.ceil(filtradas.length / limite)) : 1;
   const paginaAtual = Math.min(pagina, totalPaginas);
   const linhas = paginar ? filtradas.slice((paginaAtual - 1) * limite, paginaAtual * limite) : filtradas;
@@ -399,10 +406,12 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
                 style={largura(c)}
                 className={`relative px-3 py-2.5 text-center font-semibold text-stone-600 dark:text-stone-300 whitespace-nowrap select-none border-b border-r border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 overflow-hidden text-ellipsis ${bR.includes('transparent') ? '' : ''}`}
               >
-                <span onClick={() => ordenar(c.key)} className={ordenavel || onOrdenar ? 'cursor-pointer' : ''}>
-                  {c.label}
-                  {ordemAtiva?.key === c.key && (ordemAtiva.dir === 'asc' ? <ChevronUp className="w-3 h-3 inline ml-1 text-blue-600" /> : <ChevronDown className="w-3 h-3 inline ml-1 text-blue-600" />)}
-                </span>
+                {c.cabecalho ?? (
+                  <span onClick={() => ordenar(c.key)} className={ordenavel || onOrdenar ? 'cursor-pointer' : ''}>
+                    {c.label}
+                    {ordemAtiva?.key === c.key && (ordemAtiva.dir === 'asc' ? <ChevronUp className="w-3 h-3 inline ml-1 text-blue-600" /> : <ChevronDown className="w-3 h-3 inline ml-1 text-blue-600" />)}
+                  </span>
+                )}
                 <span
                   draggable={false}
                   onClick={(e) => e.stopPropagation()}

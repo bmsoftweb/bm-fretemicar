@@ -2,6 +2,15 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.6 — 2026-11-17
+
+- Tela nova "Vencimentos": contas a pagar em aberto (`DpPPrincipal`, Status `A`) das transportadoras no BMsoft,
+  por vencimento. Escolha de várias transportadoras, com as filiais da mesma raiz de CNPJ agrupadas (marca o grupo
+  de uma vez); marca as contas (checkbox no cabeçalho marca todas as que a busca mostra) e "Alterar Vencimento
+  para..." troca o vencimento de todas as marcadas.
+- Busca da lista acha as datas também em dd/mm/aaaa. `ListaCrm` aceita conteúdo próprio no cabeçalho da coluna
+  (`cabecalho`) e avisa a tela das linhas filtradas (`onFiltrar`).
+
 ## 0.1.5 — 2026-11-17
 
 - Modalidade do frete (`EntradasM.Transp_Frete`) escolhida em Configuração (0 remetente, 1 destinatário,

@@ -31,6 +31,8 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   (ficam com erro, prontos para relançar depois). `lerSefaz` testa a BMapi uma vez (5 s) e, fora do ar, nem tenta
   lançar: cada chamada só desistiria no timeout de 60 s, o tempo todo da função. O tempo é conferido a cada CT-e; o
   NSU só avança no fim do lote, e a chave já guardada em `cte_recebidos` é pulada quando o lote é pedido de novo.
+- Tela Vencimentos (`app/vencimentos`, `app/api/vencimentos`): contas a pagar em aberto (`DpPPrincipal`, Status `A`)
+  das transportadoras (`Pessoas.Perfil_Tra`) no BMsoft; troca o vencimento das marcadas pela BMapi (só as em aberto).
 - Rotas da API: lista fixa em `server/app.ts` (a Vercel não acha arquivos por varredura). Rota nova = entrada nova lá.
 - Imports do lado do servidor: relativos com `.js` (sem `@/`).
 - `cte_recebidos.data_emissao`: data de emissão do CT-e (do XML, `dhEmi`), não a data em que chegou

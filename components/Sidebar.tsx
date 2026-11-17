@@ -3,7 +3,7 @@ import React, { useLayoutEffect, useState } from 'react';
 import { usePathname, useRouter } from '@/lib/nav';
 import Link from '@/lib/link';
 import {
-  FileText, Mail, Settings, Truck,
+  CalendarClock, FileText, Mail, Settings, Truck,
   LogOut, Menu, X, User, Sun, Moon, ChevronLeft, ChevronRight, type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
@@ -14,7 +14,13 @@ interface Item { name: string; icon: LucideIcon; href: string }
 
 // Mesmo desenho do crmWeb: grupos com título e opções soltas
 const GRUPOS: { titulo: string; itens: Item[] }[] = [
-  { titulo: 'Principal', itens: [{ name: 'CT-e recebidos', icon: FileText, href: '/recebidos' }] },
+  {
+    titulo: 'Principal',
+    itens: [
+      { name: 'CT-e recebidos', icon: FileText, href: '/recebidos' },
+      { name: 'Vencimentos', icon: CalendarClock, href: '/vencimentos' },
+    ],
+  },
   {
     titulo: 'Configuração',
     itens: [

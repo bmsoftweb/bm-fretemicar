@@ -11,6 +11,7 @@ import { RodapeSistema } from '@/components/RodapeSistema';
 
 const TELAS: Record<string, { titulo: string; subtitulo: string; semCabecalho?: boolean }> = {
   '/recebidos': { titulo: 'CT-e recebidos', subtitulo: 'Conhecimentos de frete lidos dos e-mails e lançados no BMsoft' },
+  '/vencimentos': { titulo: 'Vencimentos', subtitulo: 'Contas a pagar em aberto das transportadoras, no BMsoft' },
   '/contas': { titulo: 'Contas de e-mail', subtitulo: 'Caixas lidas por IMAP em busca de XML de CT-e' },
   '/configuracao': { titulo: 'Configuração', subtitulo: 'Empresa, usuário e banco usados no lançamento' },
 };
