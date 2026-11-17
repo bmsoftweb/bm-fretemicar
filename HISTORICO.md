@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.13 — 2026-11-17
+
+- CT-e recebidos: ação "Ignorar" nos pendentes (Não lançado, Erro, Transportadora), com confirmação: o CT-e fica
+  Ignorado ("Ignorado pelo usuário") e sai dos pendentes. "Des-Ignorar" nos ignorados volta para Não lançado.
+  Rota `POST /api/recebidos/:id/ignorar` (`{ desfazer: true }` para des-ignorar).
+
 ## 0.1.12 — 2026-11-17
 
 - Dropdowns com seta fina cinza (vira para cima com a lista aberta) no lugar do triângulo preto (Chrome/Edge).

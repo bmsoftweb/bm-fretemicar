@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, Loader2, RefreshCw, Send } from 'lucide-react';
+import { Ban, Download, Loader2, RefreshCw, Send, Undo2 } from 'lucide-react';
 import { useRefreshDaTela } from '@/components/LayoutApp';
 import { ListaCrm } from '@/components/ListaCrm';
 import { BotaoAcao } from '@/components/MenuAcoes';
@@ -81,6 +81,7 @@ export default function RecebidosPage() {
   );
   const [filtradas, setFiltradas] = useState<Recebido[]>([]);
   const [confirmarLote, setConfirmarLote] = useState(false);
+  const [ignorar, setIgnorar] = useState<Recebido | null>(null);
   const marca = (id: number): Marca => marcas[id] ?? daTransportadora.get(id) ?? MARCA_PADRAO;
   const mudar = (id: number, k: keyof Marca, v: boolean) => {
     const nova = { ...marca(id), [k]: v };
@@ -159,6 +160,16 @@ export default function RecebidosPage() {
       setAviso({ texto: e.message, tom: 'erro' });
     } finally {
       setLancando(null);
+    }
+  };
+
+  const desIgnorar = async (l: Recebido) => {
+    try {
+      await pedir(`/api/recebidos/${l.id}/ignorar`, 'POST', { desfazer: true });
+      await carregar();
+      setAviso({ texto: 'CT-e voltou para Não lançado.', tom: 'sucesso' });
+    } catch (e: any) {
+      setAviso({ texto: e.message, tom: 'erro' });
     }
   };
 
@@ -299,6 +310,12 @@ export default function RecebidosPage() {
                 onClick={() => relancar(l)}
               />
             )}
+            {PENDENTES.includes(l.situacao) && (
+              <BotaoAcao icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => setIgnorar(l)} />
+            )}
+            {l.situacao === 'I' && (
+              <BotaoAcao icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => desIgnorar(l)} />
+            )}
             <BotaoAcao icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />
           </>
         )}
@@ -312,6 +329,21 @@ export default function RecebidosPage() {
           tom="normal"
           onConfirmar={lancarMarcados}
           onCancelar={() => setConfirmarLote(false)}
+        />
+      )}
+
+      {ignorar && (
+        <ConfirmDialog
+          titulo="Ignorar CT-e"
+          mensagem={`Marcar o CT-e de ${ignorar.emitente || 'transportadora'} (${formatNumber(ignorar.valor)}) como Ignorado? Ele não será lançado.`}
+          confirmar="Ignorar"
+          tom="normal"
+          onConfirmar={async () => {
+            await pedir(`/api/recebidos/${ignorar.id}/ignorar`, 'POST');
+            setIgnorar(null);
+            await carregar();
+          }}
+          onCancelar={() => setIgnorar(null)}
         />
       )}
 
