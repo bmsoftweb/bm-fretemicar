@@ -81,7 +81,6 @@ export default function RecebidosPage() {
   );
   const [filtradas, setFiltradas] = useState<Recebido[]>([]);
   const [confirmarLote, setConfirmarLote] = useState(false);
-  const [ignorar, setIgnorar] = useState<Recebido | null>(null);
   const marca = (id: number): Marca => marcas[id] ?? daTransportadora.get(id) ?? MARCA_PADRAO;
   const mudar = (id: number, k: keyof Marca, v: boolean) => {
     const nova = { ...marca(id), [k]: v };
@@ -163,11 +162,12 @@ export default function RecebidosPage() {
     }
   };
 
-  const desIgnorar = async (l: Recebido) => {
+  // Sem confirmação: um engano se desfaz com o Des-Ignorar
+  const ignorar = async (l: Recebido, desfazer = false) => {
     try {
-      await pedir(`/api/recebidos/${l.id}/ignorar`, 'POST', { desfazer: true });
+      await pedir(`/api/recebidos/${l.id}/ignorar`, 'POST', { desfazer });
       await carregar();
-      setAviso({ texto: 'CT-e voltou para Não lançado.', tom: 'sucesso' });
+      setAviso({ texto: desfazer ? 'CT-e voltou para Não lançado.' : 'CT-e ignorado.', tom: 'sucesso' });
     } catch (e: any) {
       setAviso({ texto: e.message, tom: 'erro' });
     }
@@ -311,10 +311,10 @@ export default function RecebidosPage() {
               />
             )}
             {PENDENTES.includes(l.situacao) && (
-              <BotaoAcao icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => setIgnorar(l)} />
+              <BotaoAcao icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => ignorar(l)} />
             )}
             {l.situacao === 'I' && (
-              <BotaoAcao icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => desIgnorar(l)} />
+              <BotaoAcao icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => ignorar(l, true)} />
             )}
             <BotaoAcao icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />
           </>
@@ -329,21 +329,6 @@ export default function RecebidosPage() {
           tom="normal"
           onConfirmar={lancarMarcados}
           onCancelar={() => setConfirmarLote(false)}
-        />
-      )}
-
-      {ignorar && (
-        <ConfirmDialog
-          titulo="Ignorar CT-e"
-          mensagem={`Marcar o CT-e de ${ignorar.emitente || 'transportadora'} (${formatNumber(ignorar.valor)}) como Ignorado? Ele não será lançado.`}
-          confirmar="Ignorar"
-          tom="normal"
-          onConfirmar={async () => {
-            await pedir(`/api/recebidos/${ignorar.id}/ignorar`, 'POST');
-            setIgnorar(null);
-            await carregar();
-          }}
-          onCancelar={() => setIgnorar(null)}
         />
       )}
 

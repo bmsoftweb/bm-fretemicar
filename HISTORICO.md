@@ -2,6 +2,10 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.14 — 2026-11-17
+
+- CT-e recebidos: "Ignorar" sem a pergunta de confirmação (um engano se desfaz com o "Des-Ignorar").
+
 ## 0.1.13 — 2026-11-17
 
 - CT-e recebidos: ação "Ignorar" nos pendentes (Não lançado, Erro, Transportadora), com confirmação: o CT-e fica
