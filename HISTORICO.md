@@ -9,6 +9,8 @@ Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedi
 - UF da empresa guardada no banco (e editável), para ler a SEFAZ mesmo com a BMapi fora do ar; NSU editável para
   buscar CT-e mais antigos.
 - Busca automática de hora em hora (Vercel Cron, `/api/cron/leitura`, protegida por `CRON_SECRET`).
+- Leitura da SEFAZ com a BMapi fora do ar não tenta lançar (guarda com erro, para relançar) e confere o tempo a
+  cada CT-e, sem estourar o limite da função; CT-e já guardado (mesma chave) não é gravado de novo.
 - Indicador de BMapi on-line/fora do ar; coluna "Emitido em" na lista de recebidos.
 - Correções no modo escuro (sobreposição nas colunas fixas da grade, barra de rolagem, itens dos selects).
 - Migrações novas: `sql/002` a `sql/005`.

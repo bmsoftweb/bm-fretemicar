@@ -2,7 +2,7 @@ import { masterPool as db } from './db.js';
 import { decifrar } from './cripto.js';
 import { parseCTe, type PessoaXml } from './cte.js';
 import { lerConta } from './imap.js';
-import { apiRows } from './bmapi.js';
+import { apiRows, bmapiOnline } from './bmapi.js';
 import { lancar, type ConfigBMsoft, type Resultado } from './lancar.js';
 import { ErroAcesso } from './acesso.js';
 import { certificadoDaEmpresa, nsuAtual, passoSefaz } from './sefaz.js';
@@ -104,8 +104,10 @@ export async function cacheUf(empresaId: number, uf: string) {
  * estiver fora do ar, usa a última guardada (sem isso, uma BMapi fora do ar impediria até baixar e guardar os
  * CT-e novos — eles ficam com erro de lançamento, prontos para relançar assim que ela voltar).
  */
-export async function ufDaEmpresa(empresaId: number, bmsoftEmpresaId: number): Promise<string> {
+export async function ufDaEmpresa(empresaId: number, bmsoftEmpresaId: number, online = true): Promise<string> {
   try {
+    // Fora do ar, nem tenta: a chamada só desiste no timeout (60 s), o tempo todo da função na Vercel
+    if (!online) throw new Error('BMapi fora do ar');
     const emp = (await apiRows('SELECT UF FROM Empresas WHERE ID = :ID', { ID: bmsoftEmpresaId }))[0];
     if (!emp) throw new Error(`Empresa ${bmsoftEmpresaId} não encontrada no BMsoft`);
     const uf = String(emp.UF ?? '');
@@ -133,7 +135,9 @@ export async function lerSefaz(empresaId: number, segundos = 40): Promise<Resumo
     if (!cert) return res; // recurso não configurado: sem erro
 
     const cfg = await configDa(empresaId);
-    const uf = await ufDaEmpresa(empresaId, cfg.empresaId);
+    // BMapi fora do ar: baixa e guarda os CT-e mesmo assim, sem tentar lançar (ficam com erro, para relançar)
+    const online = await bmapiOnline();
+    const uf = await ufDaEmpresa(empresaId, cfg.empresaId, online);
 
     const [rows]: any = await db.execute('SELECT sefaz_ultimo_nsu FROM cte_config WHERE empresa_id = ?', [empresaId]);
     let nsu = rows[0]?.sefaz_ultimo_nsu;
@@ -145,18 +149,28 @@ export async function lerSefaz(empresaId: number, segundos = 40): Promise<Resumo
     }
 
     nsu = String(nsu);
-    for (;;) {
+    lotes: for (;;) {
       if (Date.now() > prazo) {
         res.pendente = true;
         break;
       }
       const passo = await passoSefaz(cert, uf, nsu);
       for (const xml of passo.ctes) {
+        // O NSU só avança no fim do lote: se o tempo acabar no meio, a próxima chamada pede o mesmo lote de
+        // novo e pula (pela chave) o que já ficou guardado aqui
+        if (Date.now() > prazo) {
+          res.pendente = true;
+          break lotes;
+        }
         const c = parseCTe(xml);
         if (!c) continue;
+        const [ja]: any = await db.execute('SELECT 1 FROM cte_recebidos WHERE empresa_id = ? AND chave = ? LIMIT 1', [empresaId, c.chave]);
+        if (ja.length) continue;
         res.mensagens++;
         res.ctes++;
-        const r = await lancarSeguro(c, xml, cfg);
+        const r: Resultado = online
+          ? await lancarSeguro(c, xml, cfg)
+          : { situacao: 'E', mensagem: 'BMapi fora do ar; relance quando ela voltar', entradaId: 0 };
         if (r.situacao === 'L') res.lancados++;
         await db.execute(
           'INSERT INTO cte_recebidos (empresa_id, conta_id, origem, recebido_em, data_emissao, remetente, assunto, arquivo, chave, emitente, valor, ' +

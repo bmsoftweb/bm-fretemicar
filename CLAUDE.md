@@ -6,7 +6,7 @@ Versão web do freteMicar, no padrão do bm-estoque (Vite + React + Express, log
 ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `npm run dev`.
 
 - Leitura pelo botão "Buscar CT-e" (a função para em ~40 s e devolve `pendente`; a tela chama de novo até acabar)
-  e também automática de hora em hora, via Vercel Cron (`vercel.json` → `/api/cron/leitura`, 55 s de orçamento;
+  e também automática de hora em hora, via Vercel Cron (`vercel.json` → `/api/cron/leitura`, 45 s de orçamento dos 60 da função;
   `CRON_SECRET` autentica a chamada — a própria Vercel manda o cabeçalho sozinha). Cron de hora em hora exige
   plano pago na Vercel (Hobby só deixa 1x/dia); sem isso, um serviço externo (cron-job.org etc.) chamando a
   mesma URL com `Authorization: Bearer <CRON_SECRET>` funciona em qualquer plano.
@@ -26,7 +26,9 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   sozinha sempre que a BMapi responde (`lib/processo.ts` → `ufDaEmpresa`/`cacheUf`) e também editável à mão em
   Configuração (`select` com a lista de `lib/sefaz.ts` → `UF_CODIGO`) — para já funcionar mesmo com a BMapi
   fora do ar, inclusive na primeira vez. Assim, uma BMapi fora do ar não impede baixar e guardar os CT-e novos
-  (só o lançamento deles falha, individualmente, pronto para relançar depois).
+  (ficam com erro, prontos para relançar depois). `lerSefaz` testa a BMapi uma vez (5 s) e, fora do ar, nem tenta
+  lançar: cada chamada só desistiria no timeout de 60 s, o tempo todo da função. O tempo é conferido a cada CT-e; o
+  NSU só avança no fim do lote, e a chave já guardada em `cte_recebidos` é pulada quando o lote é pedido de novo.
 - Rotas da API: lista fixa em `server/app.ts` (a Vercel não acha arquivos por varredura). Rota nova = entrada nova lá.
 - Imports do lado do servidor: relativos com `.js` (sem `@/`).
 - `cte_recebidos.data_emissao`: data de emissão do CT-e (do XML, `dhEmi`), não a data em que chegou

@@ -15,5 +15,6 @@ export async function GET(req: NextRequest) {
   if (segredo && req.headers.get('authorization') !== `Bearer ${segredo}`) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
-  return NextResponse.json(await buscarCTe(EMPRESA_ID, 55));
+  // 45 s de 60 (maxDuration): sobra para o passo que já começou (um lote da SEFAZ ou um lançamento)
+  return NextResponse.json(await buscarCTe(EMPRESA_ID, 45));
 }
