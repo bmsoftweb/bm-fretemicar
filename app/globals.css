@@ -2,6 +2,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Sem isto, o navegador desenha a barra de rolagem (e outros controles nativos) sempre no claro, mesmo com .dark
+   na página — fica uma barra branca destacando no tema escuro. */
+html.dark {
+  color-scheme: dark;
+}
+
 @theme {
   /* Default variables (reused or overridden) */
   --color-elegant-bg: var(--elegant-bg);
@@ -212,7 +218,9 @@ body {
   border-left-color: #10b981 !important;
   border-radius: 0.375rem !important;
 }
-:where(input, select, textarea):where(:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="hidden"])):where(:required) {
+:where(input, select, textarea):where(:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="hidden"])):where(:required),
+/* .campo-botao não é um <input>: não tem :required, então o "obrigatório" é marcado por este atributo */
+:where(.campo-botao[data-obrigatorio="true"]) {
   border-left-color: #eab308 !important;
 }
 :where(input, select, textarea):where(:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"]):not([type="hidden"])):focus {

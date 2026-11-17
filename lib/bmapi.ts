@@ -1,7 +1,7 @@
 // Cliente da BMapi (POST /sql): um comando por chamada, sem transação. Datas vão no texto do SQL ('aaaa-mm-dd').
 export type Params = Record<string, string | number | boolean | null>;
 
-export async function bmapi(sql: string, params: Params = {}): Promise<{ rows: any[]; rowsAffected: number }> {
+export async function bmapi(sql: string, params: Params = {}, timeoutMs = 60_000): Promise<{ rows: any[]; rowsAffected: number }> {
   const url = (process.env.BMAPI_URL || '').replace(/\/+$/, '');
   const token = process.env.BMAPI_TOKEN;
   if (!url || !token) throw new Error('BMAPI_URL / BMAPI_TOKEN não configurados.');
@@ -11,7 +11,7 @@ export async function bmapi(sql: string, params: Params = {}): Promise<{ rows: a
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-API-Key': token },
       body: JSON.stringify({ sql, params }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (e: any) {
     throw new Error(`BMapi fora do ar (${url}): ${e.message}`);
@@ -35,3 +35,13 @@ export const apiExec = async (sql: string, params?: Params) => (await bmapi(sql,
 
 /** Literal de data para o SQL da BMapi */
 export const sqlData = (d: string) => `'${d.replace(/[^0-9: -]/g, '')}'`;
+
+/** Verificação rápida (5 s) para o indicador de status, sem lançar erro */
+export async function bmapiOnline(): Promise<boolean> {
+  try {
+    await bmapi('SELECT 1 AS X', {}, 5_000);
+    return true;
+  } catch {
+    return false;
+  }
+}

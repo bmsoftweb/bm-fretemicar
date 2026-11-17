@@ -2,8 +2,10 @@ import { masterPool as db } from './db.js';
 import { decifrar } from './cripto.js';
 import { parseCTe, type PessoaXml } from './cte.js';
 import { lerConta } from './imap.js';
+import { apiRows } from './bmapi.js';
 import { lancar, type ConfigBMsoft, type Resultado } from './lancar.js';
 import { ErroAcesso } from './acesso.js';
+import { certificadoDaEmpresa, nsuAtual, passoSefaz } from './sefaz.js';
 
 // Leitura das contas de e-mail (comandada pelo usuário) e o registro em cte_recebidos.
 
@@ -32,6 +34,23 @@ export interface ResumoLeitura {
   pendente: boolean;
 }
 
+const juntar = (a: ResumoLeitura, b: ResumoLeitura): ResumoLeitura => ({
+  mensagens: a.mensagens + b.mensagens,
+  ctes: a.ctes + b.ctes,
+  lancados: a.lancados + b.lancados,
+  erros: [...a.erros, ...b.erros],
+  pendente: a.pendente || b.pendente,
+});
+
+/** Lê e-mails (se ligado em Configuração; padrão desligado) e SEFAZ, dividindo o tempo entre os dois */
+export async function buscarCTe(empresaId: number, segundos = 40): Promise<ResumoLeitura> {
+  const [rows]: any = await db.execute('SELECT ler_email FROM cte_config WHERE empresa_id = ?', [empresaId]);
+  if (!rows[0]?.ler_email) return lerSefaz(empresaId, segundos);
+  const a = await lerEmails(empresaId, segundos * 0.6);
+  const b = await lerSefaz(empresaId, segundos * 0.4);
+  return juntar(a, b);
+}
+
 /** Lê as contas ativas da filial e lança os CT-e novos, até `segundos` (limite da função na Vercel) */
 export async function lerEmails(empresaId: number, segundos = 40): Promise<ResumoLeitura> {
   const prazo = Date.now() + segundos * 1000;
@@ -57,9 +76,9 @@ export async function lerEmails(empresaId: number, segundos = 40): Promise<Resum
             const r = await lancarSeguro(c, a.dados, cfg);
             if (r.situacao === 'L') res.lancados++;
             await db.execute(
-              'INSERT INTO cte_recebidos (empresa_id, conta_id, recebido_em, remetente, assunto, arquivo, chave, emitente, valor, ' +
-                'situacao, entrada_id, mensagem, xml) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-              [empresaId, conta.id, de.slice(0, 120), assunto.slice(0, 200), a.nome.slice(0, 120), c.chave,
+              'INSERT INTO cte_recebidos (empresa_id, conta_id, recebido_em, data_emissao, remetente, assunto, arquivo, chave, emitente, valor, ' +
+                'situacao, entrada_id, mensagem, xml) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [empresaId, conta.id, c.dhEmi || null, de.slice(0, 120), assunto.slice(0, 200), a.nome.slice(0, 120), c.chave,
                 (c.emit.fantasia || c.emit.nome).slice(0, 60), c.vTPrest, r.situacao, r.entradaId || null, r.mensagem.slice(0, 250), Buffer.from(a.dados)],
             );
           }
@@ -71,6 +90,86 @@ export async function lerEmails(empresaId: number, segundos = 40): Promise<Resum
     } catch (e: any) {
       res.erros.push(`${conta.descricao}: ${e.message}`);
     }
+  }
+  return res;
+}
+
+/** Guarda a UF da empresa, lida da BMapi (chamado daqui e de app/api/config/testar) */
+export async function cacheUf(empresaId: number, uf: string) {
+  if (uf) await db.execute('UPDATE cte_config SET uf_empresa = ? WHERE empresa_id = ?', [uf, empresaId]).catch(() => {});
+}
+
+/**
+ * UF da empresa (cUFAutor do pedido à SEFAZ). Busca na BMapi e guarda em cte_config.uf_empresa; se a BMapi
+ * estiver fora do ar, usa a última guardada (sem isso, uma BMapi fora do ar impediria até baixar e guardar os
+ * CT-e novos — eles ficam com erro de lançamento, prontos para relançar assim que ela voltar).
+ */
+export async function ufDaEmpresa(empresaId: number, bmsoftEmpresaId: number): Promise<string> {
+  try {
+    const emp = (await apiRows('SELECT UF FROM Empresas WHERE ID = :ID', { ID: bmsoftEmpresaId }))[0];
+    if (!emp) throw new Error(`Empresa ${bmsoftEmpresaId} não encontrada no BMsoft`);
+    const uf = String(emp.UF ?? '');
+    await cacheUf(empresaId, uf);
+    return uf;
+  } catch (e: any) {
+    const [rows]: any = await db.execute('SELECT uf_empresa FROM cte_config WHERE empresa_id = ?', [empresaId]);
+    const uf = rows[0]?.uf_empresa;
+    if (!uf) throw e; // nunca conseguiu falar com a BMapi: sem UF guardada, não tem como continuar
+    return uf;
+  }
+}
+
+/**
+ * Busca CT-e direto da SEFAZ (CTeDistribuicaoDFe), ao lado da leitura por e-mail: pega todo CT-e contra o CNPJ da
+ * empresa, mesmo o que a transportadora não mandou por e-mail. Opcional (certificado enviado na tela de
+ * Configuração); sem ele, não faz nada (sem erro). Na primeira vez só marca a posição atual (NSU), sem lançar o
+ * que já existia antes.
+ */
+export async function lerSefaz(empresaId: number, segundos = 40): Promise<ResumoLeitura> {
+  const res: ResumoLeitura = { mensagens: 0, ctes: 0, lancados: 0, erros: [], pendente: false };
+  const prazo = Date.now() + segundos * 1000;
+  try {
+    const cert = await certificadoDaEmpresa(empresaId);
+    if (!cert) return res; // recurso não configurado: sem erro
+
+    const cfg = await configDa(empresaId);
+    const uf = await ufDaEmpresa(empresaId, cfg.empresaId);
+
+    const [rows]: any = await db.execute('SELECT sefaz_ultimo_nsu FROM cte_config WHERE empresa_id = ?', [empresaId]);
+    let nsu = rows[0]?.sefaz_ultimo_nsu;
+    if (nsu == null) {
+      // Primeira vez: marca a posição atual (sem baixar o acumulado) e para por aqui.
+      const atual = await nsuAtual(cert, uf);
+      await db.execute('UPDATE cte_config SET sefaz_ultimo_nsu = ? WHERE empresa_id = ?', [atual, empresaId]);
+      return res;
+    }
+
+    nsu = String(nsu);
+    for (;;) {
+      if (Date.now() > prazo) {
+        res.pendente = true;
+        break;
+      }
+      const passo = await passoSefaz(cert, uf, nsu);
+      for (const xml of passo.ctes) {
+        const c = parseCTe(xml);
+        if (!c) continue;
+        res.mensagens++;
+        res.ctes++;
+        const r = await lancarSeguro(c, xml, cfg);
+        if (r.situacao === 'L') res.lancados++;
+        await db.execute(
+          'INSERT INTO cte_recebidos (empresa_id, conta_id, origem, recebido_em, data_emissao, remetente, assunto, arquivo, chave, emitente, valor, ' +
+            'situacao, entrada_id, mensagem, xml) VALUES (?, NULL, \'sefaz\', NOW(), ?, NULL, NULL, NULL, ?, ?, ?, ?, ?, ?, ?)',
+          [empresaId, c.dhEmi || null, c.chave, (c.emit.fantasia || c.emit.nome).slice(0, 60), c.vTPrest, r.situacao, r.entradaId || null, r.mensagem.slice(0, 250), Buffer.from(xml)],
+        );
+      }
+      if (passo.proximoNsu == null) break;
+      nsu = passo.proximoNsu;
+      await db.execute('UPDATE cte_config SET sefaz_ultimo_nsu = ? WHERE empresa_id = ?', [nsu, empresaId]);
+    }
+  } catch (e: any) {
+    res.erros.push(`SEFAZ: ${e.message}`);
   }
   return res;
 }

@@ -4,6 +4,7 @@
   "outputDirectory": "dist",
   "regions": ["gru1"],
   "functions": { "api/index.ts": { "maxDuration": 60 } },
+  "crons": [{ "path": "/api/cron/leitura", "schedule": "0 * * * *" }],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/((?!assets/).*)", "destination": "/index.html" }

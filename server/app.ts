@@ -7,6 +7,8 @@ import * as user from '../app/api/user/route.js';
 import * as configListas from '../app/api/user/config-listas/route.js';
 import * as config from '../app/api/config/route.js';
 import * as configTestar from '../app/api/config/testar/route.js';
+import * as configCertificado from '../app/api/config/certificado/route.js';
+import * as configBmapiStatus from '../app/api/config/bmapi-status/route.js';
 import * as contas from '../app/api/contas/route.js';
 import * as contasTestar from '../app/api/contas/testar/route.js';
 import * as conta from '../app/api/contas/[id]/route.js';
@@ -14,6 +16,7 @@ import * as recebidos from '../app/api/recebidos/route.js';
 import * as recebidoXml from '../app/api/recebidos/[id]/xml/route.js';
 import * as recebidoLancar from '../app/api/recebidos/[id]/lancar/route.js';
 import * as leitura from '../app/api/leitura/route.js';
+import * as cronLeitura from '../app/api/cron/leitura/route.js';
 
 /**
  * App Express com as rotas /api. Lista fixa (e não varredura da pasta app/) para a Vercel empacotar tudo:
@@ -26,6 +29,8 @@ const ROTAS: [string, Record<string, unknown>][] = [
   ['/api/user/config-listas', configListas],
   ['/api/config', config],
   ['/api/config/testar', configTestar],
+  ['/api/config/certificado', configCertificado],
+  ['/api/config/bmapi-status', configBmapiStatus],
   ['/api/contas', contas],
   ['/api/contas/testar', contasTestar],
   ['/api/contas/:id', conta],
@@ -33,6 +38,7 @@ const ROTAS: [string, Record<string, unknown>][] = [
   ['/api/recebidos/:id/xml', recebidoXml],
   ['/api/recebidos/:id/lancar', recebidoLancar],
   ['/api/leitura', leitura],
+  ['/api/cron/leitura', cronLeitura],
 ];
 const METODOS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 

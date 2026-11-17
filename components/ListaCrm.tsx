@@ -425,7 +425,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
                   onDoubleClick={() => onEditar?.(l)}
                   className={`group cursor-default transition-colors ${sel ? 'bg-blue-50 dark:bg-blue-950/30' : 'bg-white dark:bg-stone-900 hover:bg-stone-50 dark:hover:bg-stone-800/60'}`}
                 >
-                  <td className={`sticky left-0 z-[5] w-[30px] min-w-[30px] max-w-[30px] px-0 text-center align-middle bg-inherit border-r border-stone-200 dark:border-stone-800 ${bB}`}>
+                  <td className={`sticky left-0 z-[5] w-[30px] min-w-[30px] max-w-[30px] px-0 text-center align-middle border-r border-stone-200 dark:border-stone-800 ${bB} ${sel ? 'bg-blue-50 dark:bg-blue-950' : 'bg-white dark:bg-stone-900 group-hover:bg-stone-50 dark:group-hover:bg-stone-800'}`}>
                     {exp ? (
                       <button type="button" onClick={(e) => { e.stopPropagation(); onAlternar?.(l); }} title={abertaL ? 'Recolher' : 'Expandir'} className="p-0.5 rounded text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 cursor-pointer">
                         {abertaL ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -440,7 +440,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
                     </td>
                   ))}
                   {sobra && <td className={bB} />}
-                  <td className={`sticky right-0 z-[5] w-24 min-w-24 max-w-24 px-3 py-[7.5px] text-center whitespace-nowrap bg-inherit border-l border-stone-200 dark:border-stone-800 ${bB}`}>
+                  <td className={`sticky right-0 z-[5] w-24 min-w-24 max-w-24 px-3 py-[7.5px] text-center whitespace-nowrap border-l border-stone-200 dark:border-stone-800 ${bB} ${sel ? 'bg-blue-50 dark:bg-blue-950' : 'bg-white dark:bg-stone-900 group-hover:bg-stone-50 dark:group-hover:bg-stone-800'}`}>
                     <div className="flex items-center justify-center gap-0.5">{acoesEmMenu ? <MenuAcoes>{acoes?.(l)}</MenuAcoes> : acoes?.(l)}</div>
                   </td>
                 </tr>

@@ -21,6 +21,19 @@ export function formatNumber(value: number | string | undefined | null, decimals
   }).format(num);
 }
 
+/** Só dígitos -> '00.000.000/0000-00' (exibição; o CNPJ fica gravado só com dígitos) */
+export function formatarCnpj(cnpj: string | null | undefined): string {
+  const d = (cnpj || '').replace(/\D/g, '');
+  return d.length === 14 ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5') : d;
+}
+
+/** 'aaaa-mm-dd' ou ISO -> 'dd/mm/aaaa' (regra do projeto: datas sempre nesse formato) */
+export function formatarDataBR(data: string | null | undefined): string {
+  if (!data) return '';
+  const [a, m, d] = data.slice(0, 10).split('-');
+  return d && m && a ? `${d}/${m}/${a}` : '';
+}
+
 export function parseBankingInput(value: string, decimals: number = 2): number {
   const cleanValue = value.replace(/\D/g, '');
   if (cleanValue === '') return 0;

@@ -2,6 +2,17 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.2 — 2026-11-16
+
+- Leitura direta da SEFAZ (CTeDistribuicaoDFe) com certificado A1 guardado no banco (senha cifrada); é a fonte
+  padrão. E-mail passa a ser opcional (liga/desliga em Configuração).
+- UF da empresa guardada no banco (e editável), para ler a SEFAZ mesmo com a BMapi fora do ar; NSU editável para
+  buscar CT-e mais antigos.
+- Busca automática de hora em hora (Vercel Cron, `/api/cron/leitura`, protegida por `CRON_SECRET`).
+- Indicador de BMapi on-line/fora do ar; coluna "Emitido em" na lista de recebidos.
+- Correções no modo escuro (sobreposição nas colunas fixas da grade, barra de rolagem, itens dos selects).
+- Migrações novas: `sql/002` a `sql/005`.
+
 ## 0.1.1 — 2026-11-11
 
 - Primeiro envio do projeto ao repositório GitHub bm-fretemicar.

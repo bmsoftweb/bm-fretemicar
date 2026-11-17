@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Download, Loader2, MailSearch, Send } from 'lucide-react';
+import { Download, Loader2, RefreshCw, Send } from 'lucide-react';
 import { useRefreshDaTela } from '@/components/LayoutApp';
 import { ListaCrm } from '@/components/ListaCrm';
 import { BotaoAcao } from '@/components/MenuAcoes';
@@ -11,6 +11,7 @@ import { formatNumber, pedir } from '@/lib/utils';
 interface Recebido {
   id: number;
   recebido: string;
+  emissao: string | null;
   conta: string | null;
   remetente: string;
   assunto: string;
@@ -18,6 +19,7 @@ interface Recebido {
   chave: string;
   emitente: string;
   valor: string;
+  origem: 'email' | 'sefaz';
   situacao: 'L' | 'E' | 'I' | 'D' | 'P';
   entrada_id: number | null;
   mensagem: string;
@@ -58,6 +60,16 @@ export default function RecebidosPage() {
   const [lancando, setLancando] = useState<number | null>(null);
   const [aviso, setAviso] = useState<{ texto: string; tom: 'erro' | 'alerta' | 'sucesso' } | null>(null);
   const [transp, setTransp] = useState<{ id: number; p: Pessoa } | null>(null);
+  const [bmapiOn, setBmapiOn] = useState<boolean | null>(null); // null = ainda não checou
+
+  const checarBmapi = useCallback(() => {
+    pedir<{ online: boolean }>('/api/config/bmapi-status').then((r) => setBmapiOn(r.online)).catch(() => setBmapiOn(false));
+  }, []);
+  useEffect(() => {
+    checarBmapi();
+    const t = setInterval(checarBmapi, 30_000); // acompanha sem precisar recarregar a tela
+    return () => clearInterval(t);
+  }, [checarBmapi]);
 
   const carregar = useCallback(async () => {
     try {
@@ -75,7 +87,7 @@ export default function RecebidosPage() {
   useRefreshDaTela(carregar);
 
   // A função na Vercel tem tempo limitado: o servidor para no prazo e devolve `pendente`, e a tela chama de novo
-  const lerEmails = async () => {
+  const buscarCTe = async () => {
     const total = { mensagens: 0, ctes: 0, lancados: 0, erros: [] as string[] };
     try {
       for (let rodada = 1; ; rodada++) {
@@ -88,12 +100,13 @@ export default function RecebidosPage() {
         await carregar();
         if (!r.pendente || rodada >= 20) break;
       }
-      const resumo = `${total.mensagens} e-mail(s) novo(s), ${total.ctes} CT-e, ${total.lancados} lançado(s).`;
+      const resumo = `${total.mensagens} novidade(s), ${total.ctes} CT-e, ${total.lancados} lançado(s).`;
       setAviso(total.erros.length ? { texto: `${resumo}\n${total.erros.join('\n')}`, tom: 'erro' } : { texto: resumo, tom: 'sucesso' });
     } catch (e: any) {
       setAviso({ texto: e.message, tom: 'erro' });
     } finally {
       setLendo('');
+      checarBmapi(); // a leitura acabou de usar a BMapi: aproveita para atualizar o indicador
     }
   };
 
@@ -134,9 +147,22 @@ export default function RecebidosPage() {
         chave={(l: Recebido) => l.id}
         linhas={linhas}
         carregando={carregando}
-        vazio="Nenhum CT-e recebido. Use Ler e-mails para buscar nas contas cadastradas."
+        vazio="Nenhum CT-e recebido. Use Buscar CT-e para ler as contas de e-mail e a SEFAZ."
         barraExtra={
           <div className="flex items-center gap-2">
+            <span
+              title={bmapiOn == null ? 'Verificando a BMapi…' : bmapiOn ? 'BMapi on-line' : 'BMapi fora do ar: Buscar CT-e e Lançar não vão funcionar'}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${
+                bmapiOn == null
+                  ? 'bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-400'
+                  : bmapiOn
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                    : 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${bmapiOn == null ? 'bg-stone-400 animate-pulse' : bmapiOn ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+              <span>BMapi {bmapiOn == null ? '…' : bmapiOn ? 'on-line' : 'fora do ar'}</span>
+            </span>
             <select value={situacao} onChange={(e) => setSituacao(e.target.value)} className={SELECT} title="Filtrar pela situação">
               <option value="">Todas as situações</option>
               {Object.entries(SITUACOES).map(([k, s]) => (
@@ -145,17 +171,18 @@ export default function RecebidosPage() {
             </select>
             <button
               type="button"
-              onClick={lerEmails}
+              onClick={buscarCTe}
               disabled={!!lendo}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer disabled:opacity-60 whitespace-nowrap"
             >
-              {lendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <MailSearch className="w-4 h-4" />}
-              <span>{lendo || 'Ler e-mails'}</span>
+              {lendo ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              <span>{lendo || 'Buscar CT-e'}</span>
             </button>
           </div>
         }
         colunas={[
           { key: 'recebido', label: 'Recebido em', alinhar: 'centro', largura: 120 },
+          { key: 'emissao', label: 'Emitido em', alinhar: 'centro', largura: 100 },
           { key: 'conta', label: 'Conta', largura: 110 },
           { key: 'emitente', label: 'Transportadora', largura: 200 },
           { key: 'valor', label: 'Valor', alinhar: 'numero', largura: 100, render: (l: Recebido) => formatNumber(l.valor) },

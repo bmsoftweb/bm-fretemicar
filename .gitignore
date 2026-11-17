@@ -6,3 +6,6 @@ coverage/
 .env*
 !.env.example
 dist/
+# Certificado digital (nunca sobe ao repositório)
+*.pfx
+*.p12
