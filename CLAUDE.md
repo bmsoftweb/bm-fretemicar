@@ -5,6 +5,9 @@
 Versão web do freteMicar, no padrão do bm-estoque (Vite + React + Express, login pela tabela `usuarios`, banco `cteauto`,
 ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `npm run dev`.
 
+- A busca só baixa e guarda (situação `N`, "Não lançado"); quem lança é o usuário, em CT-e recebidos: checkboxes
+  por linha "Lançar" (padrão marcado → EntradasM) e "Financeiro" (padrão desmarcado → DpPPrincipal) e o botão
+  "Lançar marcados" (só as linhas que a busca da lista mostra). As marcas ficam só na tela, não no banco.
 - Leitura pelo botão "Buscar CT-e" (a função para em ~40 s e devolve `pendente`; a tela chama de novo até acabar)
   e também automática de 90 em 90 min, via Vercel Cron (`vercel.json` → `/api/cron/leitura`: duas agendas de 3 em 3 h,
   uma na hora cheia e outra 1h30 depois; cron não tem "a cada 90 min". Não menos que isso: depois de um "nada novo"

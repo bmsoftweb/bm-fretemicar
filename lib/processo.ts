@@ -27,10 +27,12 @@ async function lancarSeguro(...args: Parameters<typeof lancar>): Promise<Resulta
   }
 }
 
+// A busca só baixa e guarda (situação N): o usuário marca na tela o que lançar e com ou sem financeiro
+const AGUARDANDO = 'Aguardando lançamento';
+
 export interface ResumoLeitura {
   mensagens: number;
   ctes: number;
-  lancados: number;
   /** Erro por conta (uma conta com erro não para as outras) */
   erros: string[];
   /** Acabou o tempo com mensagem por ler: o front chama de novo */
@@ -40,7 +42,6 @@ export interface ResumoLeitura {
 const juntar = (a: ResumoLeitura, b: ResumoLeitura): ResumoLeitura => ({
   mensagens: a.mensagens + b.mensagens,
   ctes: a.ctes + b.ctes,
-  lancados: a.lancados + b.lancados,
   erros: [...a.erros, ...b.erros],
   pendente: a.pendente || b.pendente,
 });
@@ -54,11 +55,10 @@ export async function buscarCTe(empresaId: number, segundos = 40): Promise<Resum
   return juntar(a, b);
 }
 
-/** Lê as contas ativas da filial e lança os CT-e novos, até `segundos` (limite da função na Vercel) */
+/** Lê as contas ativas da filial e guarda os CT-e novos, até `segundos` (limite da função na Vercel) */
 export async function lerEmails(empresaId: number, segundos = 40): Promise<ResumoLeitura> {
   const prazo = Date.now() + segundos * 1000;
-  const cfg = await configDa(empresaId);
-  const res: ResumoLeitura = { mensagens: 0, ctes: 0, lancados: 0, erros: [], pendente: false };
+  const res: ResumoLeitura = { mensagens: 0, ctes: 0, erros: [], pendente: false };
   const [contas]: any = await db.execute('SELECT * FROM cte_contas_email WHERE empresa_id = ? AND ativo = 1 ORDER BY descricao', [empresaId]);
   for (const conta of contas) {
     if (Date.now() > prazo) {
@@ -76,13 +76,11 @@ export async function lerEmails(empresaId: number, segundos = 40): Promise<Resum
             const c = parseCTe(a.dados);
             if (!c) continue;
             res.ctes++;
-            const r = await lancarSeguro(c, a.dados, cfg);
-            if (r.situacao === 'L') res.lancados++;
             await db.execute(
               'INSERT INTO cte_recebidos (empresa_id, conta_id, recebido_em, data_emissao, remetente, assunto, arquivo, chave, emitente, valor, ' +
-                'situacao, entrada_id, mensagem, xml) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                "situacao, entrada_id, mensagem, xml) VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, 'N', NULL, ?, ?)",
               [empresaId, conta.id, c.dhEmi || null, de.slice(0, 120), assunto.slice(0, 200), a.nome.slice(0, 120), c.chave,
-                (c.emit.fantasia || c.emit.nome).slice(0, 60), c.vTPrest, r.situacao, r.entradaId || null, r.mensagem.slice(0, 250), Buffer.from(a.dados)],
+                (c.emit.fantasia || c.emit.nome).slice(0, 60), c.vTPrest, AGUARDANDO, Buffer.from(a.dados)],
             );
           }
           await db.execute('UPDATE cte_contas_email SET ultimo_uid = ? WHERE id = ?', [uid, conta.id]);
@@ -131,14 +129,14 @@ export async function ufDaEmpresa(empresaId: number, bmsoftEmpresaId: number, on
  * que já existia antes.
  */
 export async function lerSefaz(empresaId: number, segundos = 40): Promise<ResumoLeitura> {
-  const res: ResumoLeitura = { mensagens: 0, ctes: 0, lancados: 0, erros: [], pendente: false };
+  const res: ResumoLeitura = { mensagens: 0, ctes: 0, erros: [], pendente: false };
   const prazo = Date.now() + segundos * 1000;
   try {
     const cert = await certificadoDaEmpresa(empresaId);
     if (!cert) return res; // recurso não configurado: sem erro
 
     const cfg = await configDa(empresaId);
-    // BMapi fora do ar: baixa e guarda os CT-e mesmo assim, sem tentar lançar (ficam com erro, para relançar)
+    // BMapi fora do ar: usa a UF guardada, sem esperar o timeout
     const online = await bmapiOnline();
     const uf = await ufDaEmpresa(empresaId, cfg.empresaId, online);
 
@@ -171,14 +169,10 @@ export async function lerSefaz(empresaId: number, segundos = 40): Promise<Resumo
         if (ja.length) continue;
         res.mensagens++;
         res.ctes++;
-        const r: Resultado = online
-          ? await lancarSeguro(c, xml, cfg)
-          : { situacao: 'E', mensagem: 'BMapi fora do ar; relance quando ela voltar', entradaId: 0 };
-        if (r.situacao === 'L') res.lancados++;
         await db.execute(
           'INSERT INTO cte_recebidos (empresa_id, conta_id, origem, recebido_em, data_emissao, remetente, assunto, arquivo, chave, emitente, valor, ' +
-            'situacao, entrada_id, mensagem, xml) VALUES (?, NULL, \'sefaz\', NOW(), ?, NULL, NULL, NULL, ?, ?, ?, ?, ?, ?, ?)',
-          [empresaId, c.dhEmi || null, c.chave, (c.emit.fantasia || c.emit.nome).slice(0, 60), c.vTPrest, r.situacao, r.entradaId || null, r.mensagem.slice(0, 250), Buffer.from(xml)],
+            "situacao, entrada_id, mensagem, xml) VALUES (?, NULL, 'sefaz', NOW(), ?, NULL, NULL, NULL, ?, ?, ?, 'N', NULL, ?, ?)",
+          [empresaId, c.dhEmi || null, c.chave, (c.emit.fantasia || c.emit.nome).slice(0, 60), c.vTPrest, AGUARDANDO, Buffer.from(xml)],
         );
       }
       if (passo.proximoNsu == null) break;
@@ -191,14 +185,17 @@ export async function lerSefaz(empresaId: number, segundos = 40): Promise<Resumo
   return res;
 }
 
-/** Lança de novo o XML guardado (erro, transportadora pendente); `transportadora` = dados confirmados na tela */
-export async function relancar(id: number, empresaId: number, transportadora?: PessoaXml): Promise<Resultado & { emit?: PessoaXml }> {
+/**
+ * Lança o XML guardado (erro, transportadora pendente, não lançado); `transportadora` = dados confirmados na tela;
+ * `financeiro` = gera também a conta a pagar
+ */
+export async function relancar(id: number, empresaId: number, transportadora?: PessoaXml, financeiro = false): Promise<Resultado & { emit?: PessoaXml }> {
   const [rows]: any = await db.execute('SELECT xml FROM cte_recebidos WHERE id = ? AND empresa_id = ?', [id, empresaId]);
   if (!rows[0]) throw new ErroAcesso(404, 'Registro não encontrado.');
   const xml: Buffer = rows[0].xml;
   const c = parseCTe(xml);
   if (!c) throw new ErroAcesso(400, 'O XML guardado não é um CT-e.');
-  const r = await lancarSeguro(c, xml, await configDa(empresaId), transportadora);
+  const r = await lancarSeguro(c, xml, await configDa(empresaId), transportadora, financeiro);
   await db.execute('UPDATE cte_recebidos SET situacao = ?, entrada_id = ?, mensagem = ? WHERE id = ?', [r.situacao, r.entradaId || null, r.mensagem.slice(0, 250), id]);
   // Pendente: a tela abre a confirmação com os dados do XML
   return r.situacao === 'P' ? { ...r, emit: c.emit } : r;

@@ -20,7 +20,7 @@ interface Recebido {
   emitente: string;
   valor: string;
   origem: 'email' | 'sefaz';
-  situacao: 'L' | 'E' | 'I' | 'D' | 'P';
+  situacao: 'L' | 'E' | 'I' | 'D' | 'P' | 'N';
   entrada_id: number | null;
   mensagem: string;
 }
@@ -29,6 +29,7 @@ type Pessoa = Record<'cnpj' | 'ie' | 'nome' | 'fantasia' | 'lgr' | 'nro' | 'cpl'
 
 const SITUACOES: Record<string, { nome: string; cor: string }> = {
   L: { nome: 'Lançado', cor: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' },
+  N: { nome: 'Não lançado', cor: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300' },
   P: { nome: 'Transportadora', cor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
   E: { nome: 'Erro', cor: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' },
   I: { nome: 'Ignorado', cor: 'bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-300' },
@@ -36,6 +37,11 @@ const SITUACOES: Record<string, { nome: string; cor: string }> = {
 };
 
 const SELECT = `${INPUT_CLASS} !w-auto`;
+
+// Situações que ainda podem ser lançadas: não lançado, erro, transportadora a cadastrar
+const PENDENTES = 'NEP';
+interface Marca { lancar: boolean; financeiro: boolean }
+const MARCA_PADRAO: Marca = { lancar: true, financeiro: false };
 
 // Campos da transportadora confirmados antes de cadastrar em Pessoas (tamanhos do BMsoft)
 const CAMPOS_PESSOA: { k: keyof Pessoa; rotulo: string; max: number; span?: 1 | 2 | 3 | 4; digitos?: boolean }[] = [
@@ -62,6 +68,15 @@ export default function RecebidosPage() {
   const [transp, setTransp] = useState<{ id: number; p: Pessoa } | null>(null);
   const [bmapiOn, setBmapiOn] = useState<boolean | null>(null); // null = ainda não checou
   const [capturaAuto, setCapturaAuto] = useState<string | null>(null);
+  // Por CT-e pendente: Lançar = grava a entrada (EntradasM...), padrão marcado; Financeiro = gera também a conta a
+  // pagar (DpPPrincipal), padrão desmarcado. Só o que foi mexido fica guardado; o resto usa o padrão.
+  const [marcas, setMarcas] = useState<Record<number, Marca>>({});
+  const [filtradas, setFiltradas] = useState<Recebido[]>([]);
+  const [confirmarLote, setConfirmarLote] = useState(false);
+  const marca = (id: number) => marcas[id] ?? MARCA_PADRAO;
+  const mudar = (id: number, k: keyof Marca, v: boolean) => setMarcas((m) => ({ ...m, [id]: { ...(m[id] ?? MARCA_PADRAO), [k]: v } }));
+  // Só as que a busca mostra: o padrão vem marcado, então lançar "tudo" pegaria até o que está fora da tela
+  const aLancar = filtradas.filter((l) => PENDENTES.includes(l.situacao) && marca(l.id).lancar);
 
   const checarBmapi = useCallback(() => {
     pedir<{ online: boolean; capturaAuto: string | null }>('/api/config/bmapi-status')
@@ -94,19 +109,18 @@ export default function RecebidosPage() {
 
   // A função na Vercel tem tempo limitado: o servidor para no prazo e devolve `pendente`, e a tela chama de novo
   const buscarCTe = async () => {
-    const total = { mensagens: 0, ctes: 0, lancados: 0, erros: [] as string[] };
+    const total = { mensagens: 0, ctes: 0, erros: [] as string[] };
     try {
       for (let rodada = 1; ; rodada++) {
         setLendo(rodada > 1 ? `Lendo (parte ${rodada})…` : 'Lendo…');
         const r = await pedir('/api/leitura', 'POST');
         total.mensagens += r.mensagens;
         total.ctes += r.ctes;
-        total.lancados += r.lancados;
         total.erros.push(...r.erros);
         await carregar();
         if (!r.pendente || rodada >= 20) break;
       }
-      const resumo = `${total.mensagens} novidade(s), ${total.ctes} CT-e, ${total.lancados} lançado(s).`;
+      const resumo = `${total.mensagens} novidade(s), ${total.ctes} CT-e novo(s)${total.ctes ? ': marque o que lançar e clique em Lançar marcados' : ''}.`;
       setAviso(total.erros.length ? { texto: `${resumo}\n${total.erros.join('\n')}`, tom: 'erro' } : { texto: resumo, tom: 'sucesso' });
     } catch (e: any) {
       setAviso({ texto: e.message, tom: 'erro' });
@@ -117,7 +131,7 @@ export default function RecebidosPage() {
   };
 
   const lancar = async (id: number, transportadora?: Pessoa) => {
-    const r = await pedir(`/api/recebidos/${id}/lancar`, 'POST', transportadora ? { transportadora } : {});
+    const r = await pedir(`/api/recebidos/${id}/lancar`, 'POST', { transportadora, financeiro: marca(id).financeiro });
     await carregar();
     if (r.situacao === 'P') setTransp({ id, p: r.emit });
     else if (r.situacao === 'L') setAviso({ texto: `Lançado: entrada ${r.entradaId}.`, tom: 'sucesso' });
@@ -133,6 +147,26 @@ export default function RecebidosPage() {
       setAviso({ texto: e.message, tom: 'erro' });
     } finally {
       setLancando(null);
+    }
+  };
+
+  // Um por vez (cada lançamento são várias chamadas à BMapi); transportadora nova fica pendente, para confirmar na linha
+  const lancarMarcados = async () => {
+    setConfirmarLote(false);
+    const lista = aLancar;
+    const conta: Record<string, number> = {};
+    try {
+      for (const [i, l] of lista.entries()) {
+        setLendo(`Lançando ${i + 1} de ${lista.length}…`);
+        const r = await pedir(`/api/recebidos/${l.id}/lancar`, 'POST', { financeiro: marca(l.id).financeiro }).catch((e: any) => ({ situacao: 'E', mensagem: e.message }));
+        conta[r.situacao] = (conta[r.situacao] || 0) + 1;
+      }
+      const resumo = Object.entries(conta).map(([k, n]) => `${n} ${SITUACOES[k]?.nome.toLowerCase() ?? k}`).join(', ');
+      const pendente = conta.P ? '\nTransportadora não cadastrada: use o botão Lançar da linha para confirmar os dados.' : '';
+      setAviso({ texto: `${resumo}.${pendente}`, tom: conta.E ? 'erro' : conta.P || conta.I || conta.D ? 'alerta' : 'sucesso' });
+    } finally {
+      setLendo('');
+      await carregar();
     }
   };
 
@@ -178,6 +212,16 @@ export default function RecebidosPage() {
             </select>
             <button
               type="button"
+              onClick={() => setConfirmarLote(true)}
+              disabled={!!lendo || !aLancar.length}
+              title="Lança no BMsoft os CT-e com Lançar marcado (entre os que a busca mostra)"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer disabled:opacity-60 disabled:cursor-default whitespace-nowrap"
+            >
+              <Send className="w-4 h-4" />
+              <span>Lançar marcados{aLancar.length ? ` (${aLancar.length})` : ''}</span>
+            </button>
+            <button
+              type="button"
               onClick={buscarCTe}
               disabled={!!lendo}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white cursor-pointer disabled:opacity-60 whitespace-nowrap"
@@ -187,7 +231,35 @@ export default function RecebidosPage() {
             </button>
           </div>
         }
+        onFiltrar={setFiltradas}
         colunas={[
+          {
+            key: 'lancar', label: 'Lançar', alinhar: 'centro', largura: 60,
+            render: (l: Recebido) =>
+              PENDENTES.includes(l.situacao) && (
+                <input
+                  type="checkbox"
+                  checked={marca(l.id).lancar}
+                  onChange={(e) => mudar(l.id, 'lancar', e.target.checked)}
+                  className="w-4 h-4 cursor-pointer accent-emerald-600"
+                  title="Grava a entrada do CT-e no BMsoft (EntradasM) ao clicar em Lançar marcados"
+                />
+              ),
+          },
+          {
+            key: 'financeiro', label: 'Financeiro', alinhar: 'centro', largura: 75,
+            render: (l: Recebido) =>
+              PENDENTES.includes(l.situacao) && (
+                <input
+                  type="checkbox"
+                  checked={marca(l.id).lancar && marca(l.id).financeiro}
+                  disabled={!marca(l.id).lancar}
+                  onChange={(e) => mudar(l.id, 'financeiro', e.target.checked)}
+                  className="w-4 h-4 cursor-pointer accent-emerald-600 disabled:cursor-default disabled:opacity-40"
+                  title="Gera também a conta a pagar (DpPPrincipal). Só com Lançar marcado"
+                />
+              ),
+          },
           { key: 'recebido', label: 'Recebido em', alinhar: 'centro', largura: 120 },
           { key: 'emissao', label: 'Emitido em', alinhar: 'centro', largura: 100 },
           { key: 'conta', label: 'Conta', largura: 110 },
@@ -205,13 +277,31 @@ export default function RecebidosPage() {
         ]}
         acoes={(l: Recebido) => (
           <>
-            {(l.situacao === 'E' || l.situacao === 'P') && (
-              <BotaoAcao icone={Send} titulo="Lançar" descricao="Lança de novo no BMsoft o XML guardado" tom="verde" carregando={lancando === l.id} onClick={() => relancar(l)} />
+            {PENDENTES.includes(l.situacao) && (
+              <BotaoAcao
+                icone={Send}
+                titulo="Lançar"
+                descricao={`Lança só este CT-e no BMsoft${marca(l.id).financeiro ? ', com a conta a pagar' : ', sem a conta a pagar (Financeiro desmarcado)'}`}
+                tom="verde"
+                carregando={lancando === l.id}
+                onClick={() => relancar(l)}
+              />
             )}
             <BotaoAcao icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />
           </>
         )}
       />
+
+      {confirmarLote && (
+        <ConfirmDialog
+          titulo="Lançar marcados"
+          mensagem={`Lançar ${aLancar.length} CT-e no BMsoft, ${aLancar.filter((l) => marca(l.id).financeiro).length} com conta a pagar (Financeiro)?`}
+          confirmar="Lançar"
+          tom="normal"
+          onConfirmar={lancarMarcados}
+          onCancelar={() => setConfirmarLote(false)}
+        />
+      )}
 
       {transp && (
         <ConfirmDialog

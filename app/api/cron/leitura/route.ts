@@ -8,8 +8,8 @@ const EMPRESA_ID = Number(process.env.ID_EMPRESA) || 1;
 /**
  * Buscar CT-e automático (Vercel Cron, vercel.json). Autenticado por CRON_SECRET: a Vercel manda sozinha o
  * cabeçalho Authorization quando a variável existe; sem ela, a rota fica aberta (só para rodar local sem configurar).
- * Mesma função da tela ("Buscar CT-e"), só que sem usuário: lança o que achar, sem confirmar transportadora nova
- * (fica com situação "Transportadora", para confirmar depois na tela).
+ * Mesma função da tela ("Buscar CT-e"), só que sem usuário: baixa e guarda o que achar como "Não lançado", para o
+ * usuário marcar na tela o que lançar.
  */
 export async function GET(req: NextRequest) {
   const segredo = process.env.CRON_SECRET;

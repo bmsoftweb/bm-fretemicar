@@ -20,8 +20,11 @@ export const TRANSP_FRETE: Record<string, string> = {
   '9': 'Sem frete',
 };
 
-/** L lançado, D já lançado, I ignorado (tomador não é a empresa), P falta cadastrar a transportadora, E erro */
-export type Situacao = 'L' | 'D' | 'I' | 'P' | 'E';
+/**
+ * L lançado, D já lançado, I ignorado (tomador não é a empresa), P falta cadastrar a transportadora, E erro,
+ * N não lançado (a busca só baixa e guarda; o usuário marca na tela o que lançar)
+ */
+export type Situacao = 'L' | 'D' | 'I' | 'P' | 'E' | 'N';
 export interface Resultado {
   situacao: Situacao;
   mensagem: string;
@@ -70,9 +73,9 @@ async function desfazer(id: number) {
 
 /**
  * Lança o CT-e. Transportadora fora do cadastro: sem `transportadora` (dados confirmados pelo usuário) devolve 'P';
- * com ela, cadastra em Pessoas e lança.
+ * com ela, cadastra em Pessoas e lança. Sem `financeiro`, não gera a conta a pagar (DpPPrincipal).
  */
-export async function lancar(c: CTe, xml: Uint8Array, cfg: ConfigBMsoft, transportadora?: PessoaXml): Promise<Resultado> {
+export async function lancar(c: CTe, xml: Uint8Array, cfg: ConfigBMsoft, transportadora?: PessoaXml, financeiro = false): Promise<Resultado> {
   if (c.tpAmb !== '1') return r('E', 'CT-e de homologação');
   if (c.cstat !== '100') return r('E', `CT-e sem autorização de uso (cStat ${c.cstat})`);
 
@@ -123,12 +126,13 @@ export async function lancar(c: CTe, xml: Uint8Array, cfg: ConfigBMsoft, transpo
         { ID: id, Serie: nfe.slice(22, 25), Numero: parseInt(nfe.slice(25, 34)) || 0, Chave: nfe },
       );
 
-    await apiExec(
-      'INSERT INTO DpPPrincipal (ID_Empresa, ID_Fornecedor, ID_NF, ID_Banco, Seq, Seq_Tot, Doc_Serie, Doc_Num, ' +
-        'Valor, Data_Geracao, Vencimento, Status, boleto_recebido, Link_Tp, Link_ID) VALUES (:Emp, :For, :ID, :Banco, ' +
-        `1, 1, :Serie, :Num, :Valor, ${sqlData(hoje)}, ${sqlData(somarDias(hoje, DIAS_VENCIMENTO))}, 'A', 'N', 'CO', :ID)`,
-      { Emp: cfg.empresaId, For: idFor, ID: id, Banco: cfg.bancoId, Serie: c.serie, Num: String(c.numero).padStart(9, '0'), Valor: c.vTPrest },
-    );
+    if (financeiro)
+      await apiExec(
+        'INSERT INTO DpPPrincipal (ID_Empresa, ID_Fornecedor, ID_NF, ID_Banco, Seq, Seq_Tot, Doc_Serie, Doc_Num, ' +
+          'Valor, Data_Geracao, Vencimento, Status, boleto_recebido, Link_Tp, Link_ID) VALUES (:Emp, :For, :ID, :Banco, ' +
+          `1, 1, :Serie, :Num, :Valor, ${sqlData(hoje)}, ${sqlData(somarDias(hoje, DIAS_VENCIMENTO))}, 'A', 'N', 'CO', :ID)`,
+        { Emp: cfg.empresaId, For: idFor, ID: id, Banco: cfg.bancoId, Serie: c.serie, Num: String(c.numero).padStart(9, '0'), Valor: c.vTPrest },
+      );
 
     // XML_Lista: a tela de importação do BMsoft passa a ver o CT-e como já lançado
     if (await apiValue('SELECT ID FROM XML_Lista WHERE Chave = :C', { C: c.chave }))
@@ -150,5 +154,5 @@ export async function lancar(c: CTe, xml: Uint8Array, cfg: ConfigBMsoft, transpo
     await desfazer(id);
     return r('E', e.message);
   }
-  return r('L', '', id);
+  return r('L', financeiro ? '' : 'Sem financeiro (conta a pagar não gerada)', id);
 }

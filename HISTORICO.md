@@ -2,6 +2,13 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.9 — 2026-11-17
+
+- "Buscar CT-e" (e o cron, quando religado) só baixa e guarda os CT-e novos, sem lançar: entram como "Não lançado".
+- CT-e recebidos: checkboxes por linha pendente, "Lançar" (padrão marcado → `EntradasM`) e "Financeiro" (padrão
+  desmarcado → `DpPPrincipal`), e o botão "Lançar marcados" (só as linhas que a busca mostra, com confirmação).
+  Sem Financeiro, o lançamento não gera conta a pagar (antes gerava sempre).
+
 ## 0.1.8 — 2026-11-17
 
 - Conta a pagar (`DpPPrincipal`) do CT-e lançado vence na data do lançamento + 10 dias (antes + 30). Só os
