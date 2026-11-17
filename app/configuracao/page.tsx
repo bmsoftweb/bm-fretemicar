@@ -11,6 +11,7 @@ interface Config {
   bmsoft_empresa_id: string;
   bmsoft_usuario_id: string;
   banco_id: string;
+  transp_frete: string;
   ler_email: boolean;
   uf_empresa: string;
   sefaz_ultimo_nsu: string;
@@ -42,6 +43,7 @@ function lerComoBase64(arquivo: File): Promise<string> {
 export default function ConfiguracaoPage() {
   const [cfg, setCfg] = useState<Config | null>(null);
   const [ufs, setUfs] = useState<string[]>([]);
+  const [transpFretes, setTranspFretes] = useState<Record<string, string>>({});
   const [certificado, setCertificado] = useState<Certificado | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [testando, setTestando] = useState(false);
@@ -58,6 +60,7 @@ export default function ConfiguracaoPage() {
       const c = await pedir('/api/config');
       setCfg({ ...c, bmsoft_empresa_id: String(c.bmsoft_empresa_id), bmsoft_usuario_id: String(c.bmsoft_usuario_id), banco_id: String(c.banco_id) });
       setUfs(c.ufs || []);
+      setTranspFretes(c.transp_fretes || {});
       setCertificado(c.certificado);
     } catch (e: any) {
       setAviso({ texto: e.message, tom: 'erro' });
@@ -150,6 +153,13 @@ export default function ConfiguracaoPage() {
             </Campo>
             <Campo rotulo="Banco da conta a pagar (ID)" dica="Vencimento: data do lançamento + 30 dias">
               <NumberField value={cfg.banco_id} onChange={set('banco_id')} scale={0} className={INPUT_CLASS} />
+            </Campo>
+            <Campo rotulo="Modalidade do frete" dica="Gravada em Transp_Frete da entrada (no BMsoft é escolhida na importação do CT-e)">
+              <select value={cfg.transp_frete} onChange={(e) => setCfg({ ...cfg, transp_frete: e.target.value })} required className={INPUT_CLASS}>
+                {Object.entries(transpFretes).map(([k, nome]) => (
+                  <option key={k} value={k}>{k} - {nome}</option>
+                ))}
+              </select>
             </Campo>
           </GradeCampos>
         </SecaoCrm>

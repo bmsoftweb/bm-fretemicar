@@ -9,7 +9,16 @@ export interface ConfigBMsoft {
   empresaId: number; // Empresas.ID no BMsoft
   usuarioId: number;
   bancoId: number; // banco da conta a pagar
+  transpFrete: string; // EntradasM.Transp_Frete: 0 remetente, 1 destinatário, 2 terceiros, 9 sem frete
 }
+
+/** Opções de EntradasM.Transp_Frete (no BMsoft o usuário escolhe na importação; aqui vem da Configuração) */
+export const TRANSP_FRETE: Record<string, string> = {
+  '0': 'Por conta do remetente (CIF)',
+  '1': 'Por conta do destinatário (FOB)',
+  '2': 'Por conta de terceiros',
+  '9': 'Sem frete',
+};
 
 /** L lançado, D já lançado, I ignorado (tomador não é a empresa), P falta cadastrar a transportadora, E erro */
 export type Situacao = 'L' | 'D' | 'I' | 'P' | 'E';
@@ -88,12 +97,12 @@ export async function lancar(c: CTe, xml: Uint8Array, cfg: ConfigBMsoft, transpo
       'ID_Fornec, Cod_Sit, Tipo_CTe, CFOP, EntradaSaida, Emitente, ICMS_Base, ICMS_Valor, Total_Servicos, Total_Nota, ' +
       'Transp_Frete, Cancelado, Chave_NFe, TotalProdTodasNFeRef, ID_Usuario, ID_Usuario_Criou, Cod_Mun_Origem, ' +
       `Cod_Mun_Destino) VALUES (:Emp, 'X', :Modelo, :Serie, :Numero, ${sqlData(c.dhEmi)}, ${sqlData(hoje)}, ` +
-      ":Natureza, :For, '00', :TpCTe, :CFOP, 'E', 'T', :VBC, :VICMS, :Total, :Total, '9', 'N', :Chave, " +
+      ":Natureza, :For, '00', :TpCTe, :CFOP, 'E', 'T', :VBC, :VICMS, :Total, :Total, :TranspFrete, 'N', :Chave, " +
       ':VCarga, :Usu, :Usu, :Origem, :Destino)',
     {
       Emp: cfg.empresaId, Modelo: c.modelo, Serie: c.serie, Numero: c.numero, Natureza: c.natOp.slice(0, 50),
       For: idFor, TpCTe: c.tpCTe, CFOP: cfop, VBC: c.vBC, VICMS: c.vICMS, Total: c.vTPrest, Chave: c.chave,
-      VCarga: c.vCarga, Usu: cfg.usuarioId, Origem: c.cMunIni, Destino: c.cMunFim,
+      VCarga: c.vCarga, Usu: cfg.usuarioId, Origem: c.cMunIni, Destino: c.cMunFim, TranspFrete: cfg.transpFrete,
     },
   );
   id = Number(await apiValue('SELECT ID FROM EntradasM WHERE Chave_NFe = :C', { C: c.chave }));

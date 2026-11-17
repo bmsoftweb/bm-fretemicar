@@ -10,10 +10,13 @@ import { certificadoDaEmpresa, nsuAtual, passoSefaz } from './sefaz.js';
 // Leitura das contas de e-mail (comandada pelo usuário) e o registro em cte_recebidos.
 
 export async function configDa(empresaId: number): Promise<ConfigBMsoft> {
-  const [rows]: any = await db.execute('SELECT bmsoft_empresa_id, bmsoft_usuario_id, banco_id FROM cte_config WHERE empresa_id = ?', [empresaId]);
+  const [rows]: any = await db.execute('SELECT bmsoft_empresa_id, bmsoft_usuario_id, banco_id, transp_frete FROM cte_config WHERE empresa_id = ?', [empresaId]);
   const c = rows[0];
   if (!c?.bmsoft_empresa_id) throw new ErroAcesso(400, 'Configure a empresa do BMsoft antes de ler os e-mails (menu Configuração).');
-  return { empresaId: Number(c.bmsoft_empresa_id), usuarioId: Number(c.bmsoft_usuario_id) || 0, bancoId: Number(c.banco_id) || 0 };
+  return {
+    empresaId: Number(c.bmsoft_empresa_id), usuarioId: Number(c.bmsoft_usuario_id) || 0, bancoId: Number(c.banco_id) || 0,
+    transpFrete: c.transp_frete || '2',
+  };
 }
 
 async function lancarSeguro(...args: Parameters<typeof lancar>): Promise<Resultado> {

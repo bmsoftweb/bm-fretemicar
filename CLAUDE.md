@@ -39,6 +39,7 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   `sql/002_sefaz.sql` (colunas da leitura e do certificado pela SEFAZ), `sql/003_ler_email.sql`
   (liga/desliga o e-mail), `sql/004_uf_cache.sql` (cache da UF), `sql/005_data_emissao.sql`
   (data de emissão) e `sql/006_captura_auto.sql` (`cte_config.captura_auto_em`, gravada pelo cron e mostrada
-  ao lado da contagem na lista de recebidos); eu crio/altero no banco.
+  ao lado da contagem na lista de recebidos) e `sql/007_transp_frete.sql` (`cte_config.transp_frete`, gravado em
+  `EntradasM.Transp_Frete`: no BMsoft o usuário escolhe na importação, aqui é um padrão da Configuração); eu crio/altero no banco.
 - Testes: `npm test` (parser do CT-e com os XMLs de `../tests`; resposta da SEFAZ com fixture sintética, sem
   dado real de cliente — o repositório é público).

@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.5 — 2026-11-17
+
+- Modalidade do frete (`EntradasM.Transp_Frete`) escolhida em Configuração (0 remetente, 1 destinatário,
+  2 terceiros, 9 sem frete; padrão 2). Antes ia sempre 9; no BMsoft o usuário escolhe na importação do CT-e
+  (migração nova: `sql/007_transp_frete.sql`, rodar antes de publicar).
+
 ## 0.1.4 — 2026-11-17
 
 - Indicador da BMapi dava "fora do ar" com ela no ar: a consulta de teste (`SELECT 1 AS X`) não é aceita pelo DBISAM.
