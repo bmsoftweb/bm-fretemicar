@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.10 — 2026-11-17
+
+- CT-e recebidos: a última escolha de "Lançar" e "Financeiro" fica guardada por transportadora (raiz do CNPJ, vale
+  para as filiais) e os CT-e dela já vêm marcados assim. Tabela nova `cte_transportadora_marca`
+  (`sql/008_transportadora_marca.sql`).
+
 ## 0.1.9 — 2026-11-17
 
 - "Buscar CT-e" (e o cron, quando religado) só baixa e guarda os CT-e novos, sem lançar: entram como "Não lançado".

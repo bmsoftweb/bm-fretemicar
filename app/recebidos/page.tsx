@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, RefreshCw, Send } from 'lucide-react';
 import { useRefreshDaTela } from '@/components/LayoutApp';
 import { ListaCrm } from '@/components/ListaCrm';
@@ -23,6 +23,9 @@ interface Recebido {
   situacao: 'L' | 'E' | 'I' | 'D' | 'P' | 'N';
   entrada_id: number | null;
   mensagem: string;
+  /** Última escolha de Lançar/Financeiro da transportadora (null = nunca escolheu: usa o padrão) */
+  marca_lancar: number | null;
+  marca_financeiro: number | null;
 }
 
 type Pessoa = Record<'cnpj' | 'ie' | 'nome' | 'fantasia' | 'lgr' | 'nro' | 'cpl' | 'bairro' | 'cmun' | 'xmun' | 'cep' | 'uf' | 'fone', string>;
@@ -69,12 +72,21 @@ export default function RecebidosPage() {
   const [bmapiOn, setBmapiOn] = useState<boolean | null>(null); // null = ainda não checou
   const [capturaAuto, setCapturaAuto] = useState<string | null>(null);
   // Por CT-e pendente: Lançar = grava a entrada (EntradasM...), padrão marcado; Financeiro = gera também a conta a
-  // pagar (DpPPrincipal), padrão desmarcado. Só o que foi mexido fica guardado; o resto usa o padrão.
+  // pagar (DpPPrincipal), padrão desmarcado. Sem mexer na linha, vale a última escolha da transportadora (gravada
+  // no servidor a cada mudança) ou, sem ela, o padrão.
   const [marcas, setMarcas] = useState<Record<number, Marca>>({});
+  const daTransportadora = useMemo(
+    () => new Map(linhas.filter((l) => l.marca_lancar != null).map((l) => [l.id, { lancar: !!l.marca_lancar, financeiro: !!l.marca_lancar && !!l.marca_financeiro }])),
+    [linhas],
+  );
   const [filtradas, setFiltradas] = useState<Recebido[]>([]);
   const [confirmarLote, setConfirmarLote] = useState(false);
-  const marca = (id: number) => marcas[id] ?? MARCA_PADRAO;
-  const mudar = (id: number, k: keyof Marca, v: boolean) => setMarcas((m) => ({ ...m, [id]: { ...(m[id] ?? MARCA_PADRAO), [k]: v } }));
+  const marca = (id: number): Marca => marcas[id] ?? daTransportadora.get(id) ?? MARCA_PADRAO;
+  const mudar = (id: number, k: keyof Marca, v: boolean) => {
+    const nova = { ...marca(id), [k]: v };
+    setMarcas((m) => ({ ...m, [id]: nova }));
+    pedir(`/api/recebidos/${id}/marca`, 'POST', nova).catch((e: any) => setAviso({ texto: `Não gravou a escolha da transportadora: ${e.message}`, tom: 'erro' }));
+  };
   // Só as que a busca mostra: o padrão vem marcado, então lançar "tudo" pegaria até o que está fora da tela
   const aLancar = filtradas.filter((l) => PENDENTES.includes(l.situacao) && marca(l.id).lancar);
 

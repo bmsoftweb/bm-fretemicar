@@ -15,6 +15,7 @@ import * as conta from '../app/api/contas/[id]/route.js';
 import * as recebidos from '../app/api/recebidos/route.js';
 import * as recebidoXml from '../app/api/recebidos/[id]/xml/route.js';
 import * as recebidoLancar from '../app/api/recebidos/[id]/lancar/route.js';
+import * as recebidoMarca from '../app/api/recebidos/[id]/marca/route.js';
 import * as leitura from '../app/api/leitura/route.js';
 import * as cronLeitura from '../app/api/cron/leitura/route.js';
 import * as vencimentos from '../app/api/vencimentos/route.js';
@@ -38,6 +39,7 @@ const ROTAS: [string, Record<string, unknown>][] = [
   ['/api/recebidos', recebidos],
   ['/api/recebidos/:id/xml', recebidoXml],
   ['/api/recebidos/:id/lancar', recebidoLancar],
+  ['/api/recebidos/:id/marca', recebidoMarca],
   ['/api/leitura', leitura],
   ['/api/cron/leitura', cronLeitura],
   ['/api/vencimentos', vencimentos],

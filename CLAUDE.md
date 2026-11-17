@@ -7,7 +7,9 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
 
 - A busca só baixa e guarda (situação `N`, "Não lançado"); quem lança é o usuário, em CT-e recebidos: checkboxes
   por linha "Lançar" (padrão marcado → EntradasM) e "Financeiro" (padrão desmarcado → DpPPrincipal) e o botão
-  "Lançar marcados" (só as linhas que a busca da lista mostra). As marcas ficam só na tela, não no banco.
+  "Lançar marcados" (só as linhas que a busca da lista mostra). Cada mudança de checkbox grava a escolha da
+  transportadora (`cte_transportadora_marca`, pela raiz do CNPJ = posições 7–14 da chave): os CT-e dela vêm
+  marcados assim (o GET de recebidos traz `marca_lancar`/`marca_financeiro`); sem escolha gravada, o padrão.
 - Leitura pelo botão "Buscar CT-e" (a função para em ~40 s e devolve `pendente`; a tela chama de novo até acabar)
   e também automática de 90 em 90 min, via Vercel Cron (`vercel.json` → `/api/cron/leitura`: duas agendas de 3 em 3 h,
   uma na hora cheia e outra 1h30 depois; cron não tem "a cada 90 min". Não menos que isso: depois de um "nada novo"
@@ -48,6 +50,7 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   (liga/desliga o e-mail), `sql/004_uf_cache.sql` (cache da UF), `sql/005_data_emissao.sql`
   (data de emissão) e `sql/006_captura_auto.sql` (`cte_config.captura_auto_em`, gravada pelo cron e mostrada
   ao lado da contagem na lista de recebidos) e `sql/007_transp_frete.sql` (`cte_config.transp_frete`, gravado em
-  `EntradasM.Transp_Frete`: no BMsoft o usuário escolhe na importação, aqui é um padrão da Configuração); eu crio/altero no banco.
+  `EntradasM.Transp_Frete`: no BMsoft o usuário escolhe na importação, aqui é um padrão da Configuração) e
+  `sql/008_transportadora_marca.sql` (última escolha de Lançar/Financeiro por transportadora); eu crio/altero no banco.
 - Testes: `npm test` (parser do CT-e com os XMLs de `../tests`; resposta da SEFAZ com fixture sintética, sem
   dado real de cliente — o repositório é público).
