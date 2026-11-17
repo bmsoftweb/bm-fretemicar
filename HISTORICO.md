@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.12 — 2026-11-17
+
+- Dropdowns com seta fina cinza (vira para cima com a lista aberta) no lugar do triângulo preto (Chrome/Edge).
+- Listas: 100 registros por página por padrão (antes 25); o rodapé com as setas de página fica sempre visível,
+  mesmo com uma página só.
+
 ## 0.1.11 — 2026-11-17
 
 - Vencimentos: sem paginação; todas as contas do filtro aparecem de uma vez (para não esquecer nenhuma).

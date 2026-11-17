@@ -104,7 +104,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
   const ordemAtiva = onOrdenar ? (ordemExterna && ordemExterna.dir !== 'none' ? { key: ordemExterna.key, dir: ordemExterna.dir } : null) : ordem;
 
   const [busca, setBusca] = useState('');
-  const [limite, setLimite] = useState(25);
+  const [limite, setLimite] = useState(100);
   const [pagina, setPagina] = useState(1);
 
   const linhasOrd = useMemo(() => {
@@ -492,7 +492,8 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
       </table>
       </div>
 
-      {paginar && totalPaginas > 1 && (
+      {/* Rodapé sempre visível (mesmo com uma página só): as setas ficam no lugar, desabilitadas */}
+      {paginar && (
         <div className="px-4 py-2.5 border-t border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950/40 flex items-center justify-between gap-3 shrink-0">
           <span className="text-[11px] text-stone-500 dark:text-stone-400">
             Página {paginaAtual} de {totalPaginas} ({total.toLocaleString('pt-BR')} {total === 1 ? 'registro' : 'registros'})
