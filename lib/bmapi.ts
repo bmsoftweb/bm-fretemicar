@@ -39,7 +39,8 @@ export const sqlData = (d: string) => `'${d.replace(/[^0-9: -]/g, '')}'`;
 /** Verificação rápida (5 s) para o indicador de status, sem lançar erro */
 export async function bmapiOnline(): Promise<boolean> {
   try {
-    await bmapi('SELECT 1 AS X', {}, 5_000);
+    // DBISAM não aceita SELECT sem FROM nem TOP: consulta válida que não devolve linha
+    await bmapi('SELECT ID FROM Empresas WHERE ID = 0', {}, 5_000);
     return true;
   } catch {
     return false;

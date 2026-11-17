@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.4 — 2026-11-17
+
+- Indicador da BMapi dava "fora do ar" com ela no ar: a consulta de teste (`SELECT 1 AS X`) não é aceita pelo DBISAM.
+  Agora usa `SELECT ID FROM Empresas WHERE ID = 0`. A mesma verificação decide se a leitura da SEFAZ lança os CT-e,
+  que vinham ficando com erro "BMapi fora do ar"; esses podem ser relançados.
+
 ## 0.1.3 — 2026-11-16
 
 - Busca automática passa de hora em hora para 90 em 90 min (duas agendas no `vercel.json`), para respeitar o
