@@ -164,6 +164,7 @@ export default function VencimentosPage() {
         vazio={fornecedores.length ? 'Nenhuma conta em aberto para estas transportadoras.' : 'Escolha as transportadoras para ver as contas a pagar em aberto.'}
         info={marcadas.size ? `${marcadas.size} marcada(s), total ${formatNumber(totalMarcado)}` : undefined}
         onFiltrar={setFiltradas}
+        paginar={false} // todas de uma vez: conta escondida em outra página é conta esquecida
         barraExtra={
           <div className="flex items-center gap-2">
             <div ref={caixaRef}>

@@ -2,6 +2,10 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.11 — 2026-11-17
+
+- Vencimentos: sem paginação; todas as contas do filtro aparecem de uma vez (para não esquecer nenhuma).
+
 ## 0.1.10 — 2026-11-17
 
 - CT-e recebidos: a última escolha de "Lançar" e "Financeiro" fica guardada por transportadora (raiz do CNPJ, vale
