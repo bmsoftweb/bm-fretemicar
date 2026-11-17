@@ -28,7 +28,7 @@ export interface Resultado {
   entradaId: number;
 }
 
-const DIAS_VENCIMENTO = 30;
+const DIAS_VENCIMENTO = 10; // conta a pagar vence na data do lançamento + 10 dias
 const r = (situacao: Situacao, mensagem = '', entradaId = 0): Resultado => ({ situacao, mensagem, entradaId });
 
 /** Texto com os mesmos bytes do XML: o memo do DBISAM é ANSI e o BMsoft grava o XML (UTF-8) assim */

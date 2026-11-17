@@ -151,7 +151,7 @@ export default function ConfiguracaoPage() {
             <Campo rotulo="Usuário (ID no BMsoft)" dica="Gravado como autor das entradas">
               <NumberField value={cfg.bmsoft_usuario_id} onChange={set('bmsoft_usuario_id')} scale={0} className={INPUT_CLASS} />
             </Campo>
-            <Campo rotulo="Banco da conta a pagar (ID)" dica="Vencimento: data do lançamento + 30 dias">
+            <Campo rotulo="Banco da conta a pagar (ID)" dica="Vencimento: data do lançamento + 10 dias">
               <NumberField value={cfg.banco_id} onChange={set('banco_id')} scale={0} className={INPUT_CLASS} />
             </Campo>
             <Campo rotulo="Modalidade do frete" dica="Gravada em Transp_Frete da entrada (no BMsoft é escolhida na importação do CT-e)">

@@ -2,6 +2,11 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.8 — 2026-11-17
+
+- Conta a pagar (`DpPPrincipal`) do CT-e lançado vence na data do lançamento + 10 dias (antes + 30). Só os
+  próximos lançamentos; os já lançados continuam como estão.
+
 ## 0.1.7 — 2026-11-17
 
 - Busca e lançamento automáticos (Vercel Cron) desligados por enquanto: `crons` saiu do `vercel.json`. A rota
