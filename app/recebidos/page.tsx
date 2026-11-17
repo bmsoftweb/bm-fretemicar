@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ban, Download, FileText, Loader2, RefreshCw, Send, Undo2 } from 'lucide-react';
 import { useRefreshDaTela } from '@/components/LayoutApp';
 import { ListaCrm } from '@/components/ListaCrm';
-import { BotaoAcao, MenuAcoes } from '@/components/MenuAcoes';
+import { BotaoAcao } from '@/components/MenuAcoes';
 import { AvisoErro } from '@/components/AvisoErro';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { Campo, GradeCampos, INPUT_CLASS } from '@/components/FormCrm';
@@ -322,27 +322,32 @@ export default function RecebidosPage() {
           { key: 'remetente', label: 'Remetente', largura: 180 },
           { key: 'arquivo', label: 'Arquivo', largura: 200 },
         ]}
+        // Posições fixas (Lançar | Ignorar ou Des-Ignorar | DACTE | XML): a ação que não vale para a linha vira um
+        // espaço do tamanho do ícone, para cada ícone ficar sempre na mesma coluna, um embaixo do outro
         acoes={(l: Recebido) => {
           const pendente = PENDENTES.includes(l.situacao);
-          const lista = [
-            pendente && (
-              <BotaoAcao
-                key="lancar"
-                icone={Send}
-                titulo="Lançar"
-                descricao={`Lança só este CT-e no BMsoft${marca(l.id).financeiro ? ', com a conta a pagar' : ', sem a conta a pagar (Financeiro desmarcado)'}`}
-                tom="verde"
-                carregando={lancando === l.id}
-                onClick={() => relancar(l)}
-              />
-            ),
-            pendente && <BotaoAcao key="ignorar" icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => ignorar(l)} />,
-            l.situacao === 'I' && <BotaoAcao key="designorar" icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => ignorar(l, true)} />,
-            <BotaoAcao key="dacte" icone={FileText} titulo="Ver DACTE" descricao="Abre o DACTE (PDF do CT-e) numa aba nova" onClick={() => verDacte(l)} />,
-            <BotaoAcao key="xml" icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />,
-          ].filter(Boolean);
-          // Até 4 ações ficam soltas; mais que isso, o botão "..." com o menu
-          return lista.length > 4 ? <MenuAcoes>{lista}</MenuAcoes> : <>{lista}</>;
+          const vazio = <span aria-hidden className="w-[22px] h-[22px]" />;
+          return (
+            <>
+              {pendente ? (
+                <BotaoAcao
+                  icone={Send}
+                  titulo="Lançar"
+                  descricao={`Lança só este CT-e no BMsoft${marca(l.id).financeiro ? ', com a conta a pagar' : ', sem a conta a pagar (Financeiro desmarcado)'}`}
+                  tom="verde"
+                  carregando={lancando === l.id}
+                  onClick={() => relancar(l)}
+                />
+              ) : vazio}
+              {pendente ? (
+                <BotaoAcao icone={Ban} titulo="Ignorar" descricao="Marca este CT-e como Ignorado: ele sai dos pendentes e não é lançado" onClick={() => ignorar(l)} />
+              ) : l.situacao === 'I' ? (
+                <BotaoAcao icone={Undo2} titulo="Des-Ignorar" descricao="Volta este CT-e para Não lançado, para poder lançar" onClick={() => ignorar(l, true)} />
+              ) : vazio}
+              <BotaoAcao icone={FileText} titulo="Ver DACTE" descricao="Abre o DACTE (PDF do CT-e) numa aba nova" onClick={() => verDacte(l)} />
+              <BotaoAcao icone={Download} titulo="Baixar XML" descricao="Baixa o XML do CT-e" onClick={() => window.open(`/api/recebidos/${l.id}/xml`, '_blank')} />
+            </>
+          );
         }}
       />
 

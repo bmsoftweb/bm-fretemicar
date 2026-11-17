@@ -2,6 +2,11 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.17 — 2026-11-17
+
+- CT-e recebidos: ícones da coluna Ações em posições fixas (Lançar | Ignorar ou Des-Ignorar | Ver DACTE | Baixar XML),
+  um embaixo do outro em todas as linhas; a ação que não vale para a linha fica em branco.
+
 ## 0.1.16 — 2026-11-17
 
 - CT-e recebidos: ação "Ver DACTE" abre o PDF do CT-e numa aba nova, gerado na hora do XML guardado (`lib/dacte.ts`,
