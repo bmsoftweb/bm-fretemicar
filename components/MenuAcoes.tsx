@@ -44,7 +44,9 @@ export const BotaoAcao: React.FC<AcaoProps> = ({ icone: Icone, titulo, descricao
       type="button"
       onClick={clicar}
       disabled={carregando}
-      title={`${titulo}: ${descricao}`}
+      title={titulo}
+      data-dica-desc={descricao}
+      aria-label={`${titulo}: ${descricao}`}
       className={`p-1 rounded text-stone-400 ${HOVER_ICONE[tom]} transition-colors cursor-pointer disabled:cursor-wait`}
     >
       {carregando ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Icone className="w-3.5 h-3.5" />}

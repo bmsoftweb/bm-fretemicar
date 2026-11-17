@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.15 — 2026-11-17
+
+- Tooltips no visual BMsoft (componente `Dica`, o mesmo do bm-otica) no lugar do tooltip nativo do navegador, no app
+  inteiro; nos ícones de ação, nome e descrição em duas linhas.
+- Listas: cabeçalho de coluna cortado com "..." mostra o nome inteiro no tooltip.
+
 ## 0.1.14 — 2026-11-17
 
 - CT-e recebidos: "Ignorar" sem a pergunta de confirmação (um engano se desfaz com o "Des-Ignorar").

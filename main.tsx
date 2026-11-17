@@ -4,12 +4,14 @@ import { BrowserRouter } from 'react-router-dom';
 import './app/globals.css';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { App } from './App';
+import { Dica } from '@/components/Dica';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
       <ThemeProvider>
         <App />
+        <Dica />
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,

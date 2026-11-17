@@ -403,6 +403,12 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
                 onDragStart={() => (arrastada.current = c.key)}
                 onDragOver={(e) => arrastada.current && e.preventDefault()}
                 onDrop={() => soltarColuna(c.key)}
+                // Título cortado com "...": nome inteiro na Dica. pointerover (não mouseenter) para o title já estar lá
+                // quando a Dica olhar; com a Dica aberta (ela guarda o title em data-dica-title) não mexe
+                onPointerOver={(e) => {
+                  const th = e.currentTarget;
+                  if (th.dataset.dicaTitle === undefined) th.title = th.scrollWidth > th.clientWidth ? String(c.label) : '';
+                }}
                 style={largura(c)}
                 className={`relative px-3 py-2.5 text-center font-semibold text-stone-600 dark:text-stone-300 whitespace-nowrap select-none border-b border-r border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 overflow-hidden text-ellipsis ${bR.includes('transparent') ? '' : ''}`}
               >
