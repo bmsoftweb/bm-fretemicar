@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from '../../../../server/next-server.js';
 import { buscarCTe } from '../../../../lib/processo.js';
+import { masterPool as db } from '../../../../lib/db.js';
 
 // Empresa fixa (ID_EMPRESA do .env): esta rota não tem sessão de usuário, é chamada pelo cron.
 const EMPRESA_ID = Number(process.env.ID_EMPRESA) || 1;
@@ -16,5 +17,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
   }
   // 45 s de 60 (maxDuration): sobra para o passo que já começou (um lote da SEFAZ ou um lançamento)
-  return NextResponse.json(await buscarCTe(EMPRESA_ID, 45));
+  const res = await buscarCTe(EMPRESA_ID, 45);
+  // Mostrada na lista de recebidos; sem a coluna (sql/006 ainda não rodado) não derruba a leitura
+  await db.execute('UPDATE cte_config SET captura_auto_em = NOW() WHERE empresa_id = ?', [EMPRESA_ID]).catch(() => {});
+  return NextResponse.json(res);
 }

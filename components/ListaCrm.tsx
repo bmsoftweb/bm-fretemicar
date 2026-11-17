@@ -75,6 +75,8 @@ interface Props<T> {
   rotuloNovo?: string;
   /** Conteúdo extra na barra de ferramentas (ex.: Filtrar, expandir tudo), antes de "por página" */
   barraExtra?: React.ReactNode;
+  /** Informação ao lado da contagem de registros (ex.: última busca automática) */
+  info?: React.ReactNode;
   /** Busca por texto nas linhas (padrão: ligada) */
   buscar?: boolean;
   /** "N por página" e paginação (padrão: ligada). Desligar em árvores e painéis */
@@ -82,7 +84,7 @@ interface Props<T> {
   className?: string;
 }
 
-export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenavel = true, carregando, vazio, onEditar, acoes, acoesEmMenu, detalhe, expansivel, aberta, onAlternar, rodape, ordemExterna, onOrdenar, extraMenu, onNovo, rotuloNovo = 'Novo', barraExtra, buscar = true, paginar = true, className = 'max-h-[calc(100vh-var(--altura-topo))]' }: Props<T>) {
+export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenavel = true, carregando, vazio, onEditar, acoes, acoesEmMenu, detalhe, expansivel, aberta, onAlternar, rodape, ordemExterna, onOrdenar, extraMenu, onNovo, rotuloNovo = 'Novo', barraExtra, info, buscar = true, paginar = true, className = 'max-h-[calc(100vh-var(--altura-topo))]' }: Props<T>) {
   const [prefs, setPrefs] = useState<Prefs>(PADRAO);
   const [ordem, setOrdem] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(null);
   const [sobra, setSobra] = useState(true);
@@ -343,6 +345,7 @@ export function ListaCrm<T>({ id, colunas, linhas: linhasOrigem, chave, ordenave
               : paginar
               ? `${(paginaAtual - 1) * limite + 1}–${Math.min(paginaAtual * limite, total)} de ${total} registro(s)`
               : `${total} registro(s)`}
+            {info && <span className="ml-4">{info}</span>}
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             {buscar && (

@@ -61,9 +61,15 @@ export default function RecebidosPage() {
   const [aviso, setAviso] = useState<{ texto: string; tom: 'erro' | 'alerta' | 'sucesso' } | null>(null);
   const [transp, setTransp] = useState<{ id: number; p: Pessoa } | null>(null);
   const [bmapiOn, setBmapiOn] = useState<boolean | null>(null); // null = ainda não checou
+  const [capturaAuto, setCapturaAuto] = useState<string | null>(null);
 
   const checarBmapi = useCallback(() => {
-    pedir<{ online: boolean }>('/api/config/bmapi-status').then((r) => setBmapiOn(r.online)).catch(() => setBmapiOn(false));
+    pedir<{ online: boolean; capturaAuto: string | null }>('/api/config/bmapi-status')
+      .then((r) => {
+        setBmapiOn(r.online);
+        setCapturaAuto(r.capturaAuto);
+      })
+      .catch(() => setBmapiOn(false));
   }, []);
   useEffect(() => {
     checarBmapi();
@@ -148,6 +154,7 @@ export default function RecebidosPage() {
         linhas={linhas}
         carregando={carregando}
         vazio="Nenhum CT-e recebido. Use Buscar CT-e para ler as contas de e-mail e a SEFAZ."
+        info={`Última busca automática: ${capturaAuto ?? 'ainda não rodou'}`}
         barraExtra={
           <div className="flex items-center gap-2">
             <span

@@ -2,6 +2,13 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.3 — 2026-11-16
+
+- Busca automática passa de hora em hora para 90 em 90 min (duas agendas no `vercel.json`), para respeitar o
+  intervalo mínimo de 1 h da SEFAZ depois de uma consulta sem novidade (senão bloqueia com 656).
+- Lista de recebidos mostra a data/hora da última busca automática, ao lado da contagem
+  (migração nova: `sql/006_captura_auto.sql`).
+
 ## 0.1.2 — 2026-11-16
 
 - Leitura direta da SEFAZ (CTeDistribuicaoDFe) com certificado A1 guardado no banco (senha cifrada); é a fonte

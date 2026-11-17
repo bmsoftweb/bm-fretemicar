@@ -6,7 +6,9 @@ Versão web do freteMicar, no padrão do bm-estoque (Vite + React + Express, log
 ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `npm run dev`.
 
 - Leitura pelo botão "Buscar CT-e" (a função para em ~40 s e devolve `pendente`; a tela chama de novo até acabar)
-  e também automática de hora em hora, via Vercel Cron (`vercel.json` → `/api/cron/leitura`, 45 s de orçamento dos 60 da função;
+  e também automática de 90 em 90 min, via Vercel Cron (`vercel.json` → `/api/cron/leitura`: duas agendas de 3 em 3 h,
+  uma na hora cheia e outra 1h30 depois; cron não tem "a cada 90 min". Não menos que isso: depois de um "nada novo"
+  (cStat 137) a SEFAZ exige 1 h até a próxima consulta, senão bloqueia com 656; 45 s de orçamento dos 60 da função;
   `CRON_SECRET` autentica a chamada — a própria Vercel manda o cabeçalho sozinha). Cron de hora em hora exige
   plano pago na Vercel (Hobby só deixa 1x/dia); sem isso, um serviço externo (cron-job.org etc.) chamando a
   mesma URL com `Authorization: Bearer <CRON_SECRET>` funciona em qualquer plano.
@@ -35,7 +37,8 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   (`recebido_em`); gravada no INSERT, nos dois caminhos (e-mail e SEFAZ).
 - Tabelas: `sql/000_banco_e_usuarios.sql` (banco + usuarios), `sql/001_tabelas_mysql.sql` (cte_*),
   `sql/002_sefaz.sql` (colunas da leitura e do certificado pela SEFAZ), `sql/003_ler_email.sql`
-  (liga/desliga o e-mail), `sql/004_uf_cache.sql` (cache da UF) e `sql/005_data_emissao.sql`
-  (data de emissão); eu crio/altero no banco.
+  (liga/desliga o e-mail), `sql/004_uf_cache.sql` (cache da UF), `sql/005_data_emissao.sql`
+  (data de emissão) e `sql/006_captura_auto.sql` (`cte_config.captura_auto_em`, gravada pelo cron e mostrada
+  ao lado da contagem na lista de recebidos); eu crio/altero no banco.
 - Testes: `npm test` (parser do CT-e com os XMLs de `../tests`; resposta da SEFAZ com fixture sintética, sem
   dado real de cliente — o repositório é público).
