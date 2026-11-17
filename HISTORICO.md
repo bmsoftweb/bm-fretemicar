@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.7 — 2026-11-17
+
+- Busca e lançamento automáticos (Vercel Cron) desligados por enquanto: `crons` saiu do `vercel.json`. A rota
+  `/api/cron/leitura` continua; a leitura fica só pelo botão "Buscar CT-e". Como religar: `CLAUDE.md`.
+- Vencimentos: sai o botão "Marcar todas" da barra; marcar todas é pelo checkbox do cabeçalho.
+
 ## 0.1.6 — 2026-11-17
 
 - Tela nova "Vencimentos": contas a pagar em aberto (`DpPPrincipal`, Status `A`) das transportadoras no BMsoft,

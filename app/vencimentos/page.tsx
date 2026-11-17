@@ -219,15 +219,6 @@ export default function VencimentosPage() {
             </div>
             <button
               type="button"
-              disabled={!filtradas.length}
-              onClick={marcarFiltradas}
-              title={filtradas.length < linhas.length ? `Só as ${filtradas.length} que a busca mostra` : undefined}
-              className={`${BOTAO} text-stone-600 dark:text-stone-300 border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800`}
-            >
-              {`${todasMarcadas ? 'Desmarcar' : 'Marcar'} ${filtradas.length < linhas.length ? `as ${filtradas.length} filtradas` : 'todas'}`}
-            </button>
-            <button
-              type="button"
               disabled={!marcadas.size}
               onClick={() => setNovoVenc('')}
               className={`${BOTAO} bg-blue-600 hover:bg-blue-700 text-white`}

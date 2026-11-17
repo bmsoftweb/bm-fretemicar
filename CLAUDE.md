@@ -12,6 +12,9 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   `CRON_SECRET` autentica a chamada — a própria Vercel manda o cabeçalho sozinha). Cron de hora em hora exige
   plano pago na Vercel (Hobby só deixa 1x/dia); sem isso, um serviço externo (cron-job.org etc.) chamando a
   mesma URL com `Authorization: Bearer <CRON_SECRET>` funciona em qualquer plano.
+  **Desligada por enquanto (desde 17/11/2026):** `crons` tirado do `vercel.json`; a rota continua.
+  Para religar, voltar no `vercel.json`:
+  `"crons": [{ "path": "/api/cron/leitura", "schedule": "0 0-23/3 * * *" }, { "path": "/api/cron/leitura", "schedule": "30 1-23/3 * * *" }]`
 - Duas fontes de CT-e (`lib/processo.ts`, `buscarCTe`): direto da SEFAZ (`lib/sefaz.ts`, webservice
   CTeDistribuicaoDFe — pega todo CT-e contra o CNPJ, mesmo o que a transportadora não mandou por e-mail; é a
   fonte padrão) e e-mail (IMAP, `lib/imap.ts`), **desligado por padrão** — liga em Configuração
