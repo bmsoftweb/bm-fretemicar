@@ -91,6 +91,16 @@ export default function RecebidosPage() {
   };
   // Só as que a busca mostra: o padrão vem marcado, então lançar "tudo" pegaria até o que está fora da tela
   const aLancar = filtradas.filter((l) => PENDENTES.includes(l.situacao) && marca(l.id).lancar);
+  // "Marcar todos" (cabeçalho do Lançar, como em Vencimentos): só os pendentes que a busca mostra. Fica só na tela:
+  // não grava como escolha de cada transportadora (isso continua sendo o clique na linha)
+  const pendentesVisiveis = filtradas.filter((l) => PENDENTES.includes(l.situacao));
+  const todosLancar = pendentesVisiveis.length > 0 && pendentesVisiveis.every((l) => marca(l.id).lancar);
+  const marcarTodos = () =>
+    setMarcas((m) => {
+      const n = { ...m };
+      for (const l of pendentesVisiveis) n[l.id] = { ...marca(l.id), lancar: !todosLancar };
+      return n;
+    });
 
   const checarBmapi = useCallback(() => {
     pedir<{ online: boolean; capturaAuto: string | null }>('/api/config/bmapi-status')
@@ -284,6 +294,16 @@ export default function RecebidosPage() {
         colunas={[
           {
             key: 'lancar', label: 'Lançar', alinhar: 'centro', largura: 60,
+            cabecalho: (
+              <input
+                type="checkbox"
+                checked={todosLancar}
+                disabled={!pendentesVisiveis.length}
+                onChange={marcarTodos}
+                className="w-4 h-4 align-middle cursor-pointer accent-emerald-600 disabled:cursor-default"
+                title={pendentesVisiveis.length < filtradas.length || filtradas.length < linhas.length ? `Marcar/desmarcar Lançar nos ${pendentesVisiveis.length} pendentes que a busca mostra` : 'Marcar/desmarcar Lançar em todos'}
+              />
+            ),
             render: (l: Recebido) =>
               PENDENTES.includes(l.situacao) && (
                 <input

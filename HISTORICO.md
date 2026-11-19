@@ -2,6 +2,11 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.19 — 2026-11-19
+
+- CT-e recebidos: "Marcar todos" no cabeçalho da coluna Lançar (como em Vencimentos), para os pendentes que a busca
+  mostra; fica só na tela, sem gravar como escolha de cada transportadora.
+
 ## 0.1.18 — 2026-11-19
 
 - Busca de CT-e (SEFAZ e e-mail): só guarda o CT-e cujo tomador é o CNPJ do certificado configurado
