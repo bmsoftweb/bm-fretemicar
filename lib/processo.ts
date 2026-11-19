@@ -46,6 +46,17 @@ const juntar = (a: ResumoLeitura, b: ResumoLeitura): ResumoLeitura => ({
   pendente: a.pendente || b.pendente,
 });
 
+/**
+ * CNPJ que o tomador do CT-e tem que ter para o CT-e ser guardado: o do certificado configurado
+ * (cte_config.sefaz_cert_cnpj; não depende da BMapi). Sem certificado: vazio, guarda todos.
+ */
+async function cnpjDaEmpresa(empresaId: number): Promise<string> {
+  const [rows]: any = await db.execute('SELECT sefaz_cert_cnpj FROM cte_config WHERE empresa_id = ?', [empresaId]);
+  return String(rows[0]?.sefaz_cert_cnpj ?? '').replace(/\D/g, '');
+}
+/** CT-e de outro tomador (a empresa só aparece como remetente, destinatário...) nem é guardado */
+const tomadorOutro = (tomaCnpj: string, cnpjEmpresa: string) => !!cnpjEmpresa && tomaCnpj !== cnpjEmpresa;
+
 /** Lê e-mails (se ligado em Configuração; padrão desligado) e SEFAZ, dividindo o tempo entre os dois */
 export async function buscarCTe(empresaId: number, segundos = 40): Promise<ResumoLeitura> {
   const [rows]: any = await db.execute('SELECT ler_email FROM cte_config WHERE empresa_id = ?', [empresaId]);
@@ -60,6 +71,8 @@ export async function lerEmails(empresaId: number, segundos = 40): Promise<Resum
   const prazo = Date.now() + segundos * 1000;
   const res: ResumoLeitura = { mensagens: 0, ctes: 0, erros: [], pendente: false };
   const [contas]: any = await db.execute('SELECT * FROM cte_contas_email WHERE empresa_id = ? AND ativo = 1 ORDER BY descricao', [empresaId]);
+  if (!contas.length) return res;
+  const cnpjEmpresa = await cnpjDaEmpresa(empresaId);
   for (const conta of contas) {
     if (Date.now() > prazo) {
       res.pendente = true;
@@ -74,7 +87,7 @@ export async function lerEmails(empresaId: number, segundos = 40): Promise<Resum
           res.mensagens++;
           for (const a of anexos) {
             const c = parseCTe(a.dados);
-            if (!c) continue;
+            if (!c || tomadorOutro(c.tomaCnpj, cnpjEmpresa)) continue;
             res.ctes++;
             await db.execute(
               'INSERT INTO cte_recebidos (empresa_id, conta_id, recebido_em, data_emissao, remetente, assunto, arquivo, chave, emitente, valor, ' +
@@ -139,6 +152,7 @@ export async function lerSefaz(empresaId: number, segundos = 40): Promise<Resumo
     // BMapi fora do ar: usa a UF guardada, sem esperar o timeout
     const online = await bmapiOnline();
     const uf = await ufDaEmpresa(empresaId, cfg.empresaId, online);
+    const cnpjEmpresa = await cnpjDaEmpresa(empresaId);
 
     const [rows]: any = await db.execute('SELECT sefaz_ultimo_nsu FROM cte_config WHERE empresa_id = ?', [empresaId]);
     let nsu = rows[0]?.sefaz_ultimo_nsu;
@@ -164,7 +178,7 @@ export async function lerSefaz(empresaId: number, segundos = 40): Promise<Resumo
           break lotes;
         }
         const c = parseCTe(xml);
-        if (!c) continue;
+        if (!c || tomadorOutro(c.tomaCnpj, cnpjEmpresa)) continue;
         const [ja]: any = await db.execute('SELECT 1 FROM cte_recebidos WHERE empresa_id = ? AND chave = ? LIMIT 1', [empresaId, c.chave]);
         if (ja.length) continue;
         res.mensagens++;

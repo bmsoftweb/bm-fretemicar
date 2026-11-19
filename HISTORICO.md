@@ -2,6 +2,12 @@
 
 Mais recente primeiro. PATCH a cada envio ao GitHub; MAJOR/MINOR só quando pedido.
 
+## 0.1.18 — 2026-11-19
+
+- Busca de CT-e (SEFAZ e e-mail): só guarda o CT-e cujo tomador é o CNPJ do certificado configurado
+  (`cte_config.sefaz_cert_cnpj`); os de outro tomador nem entram em `cte_recebidos`. Sem certificado, guarda todos.
+- CT-e recebidos: a lista abre já filtrada em "Não lançado" e tem a coluna "Número" (nº do CT-e, tirado da chave).
+
 ## 0.1.17 — 2026-11-17
 
 - CT-e recebidos: ícones da coluna Ações em posições fixas (Lançar | Ignorar ou Des-Ignorar | Ver DACTE | Baixar XML),

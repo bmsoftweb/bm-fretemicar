@@ -17,6 +17,8 @@ interface Recebido {
   assunto: string;
   arquivo: string;
   chave: string;
+  /** Número do CT-e (nCT, tirado da chave) */
+  numero: number;
   emitente: string;
   valor: string;
   origem: 'email' | 'sefaz';
@@ -64,7 +66,7 @@ const CAMPOS_PESSOA: { k: keyof Pessoa; rotulo: string; max: number; span?: 1 | 
 export default function RecebidosPage() {
   const [linhas, setLinhas] = useState<Recebido[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [situacao, setSituacao] = useState('');
+  const [situacao, setSituacao] = useState('N'); // abre já em "Não lançado"
   const [lendo, setLendo] = useState('');
   const [lancando, setLancando] = useState<number | null>(null);
   const [aviso, setAviso] = useState<{ texto: string; tom: 'erro' | 'alerta' | 'sucesso' } | null>(null);
@@ -310,6 +312,7 @@ export default function RecebidosPage() {
           { key: 'recebido', label: 'Recebido em', alinhar: 'centro', largura: 120 },
           { key: 'emissao', label: 'Emitido em', alinhar: 'centro', largura: 100 },
           { key: 'conta', label: 'Conta', largura: 110 },
+          { key: 'numero', label: 'Número', alinhar: 'numero', largura: 80, render: (l: Recebido) => String(l.numero) },
           { key: 'emitente', label: 'Transportadora', largura: 200 },
           { key: 'valor', label: 'Valor', alinhar: 'numero', largura: 100, render: (l: Recebido) => formatNumber(l.valor) },
           {

@@ -25,7 +25,8 @@ ListaCrm/FormCrm). Roda na Vercel (`api/index.ts` + `vercel.json`); local com `n
   fonte padrão) e e-mail (IMAP, `lib/imap.ts`), **desligado por padrão** — liga em Configuração
   (`cte_config.ler_email`). Com o e-mail ligado, as duas rodam uma do lado da outra, dividindo o tempo. Na
   primeira vez que a SEFAZ é configurada, só marca a posição atual (NSU), sem lançar o que já existia antes
-  (decisão do cliente: não processar o acumulado).
+  (decisão do cliente: não processar o acumulado). Nas duas fontes, só guarda o CT-e cujo tomador é o CNPJ do
+  certificado configurado (`cte_config.sefaz_cert_cnpj`); os outros nem entram em `cte_recebidos`.
 - Certificado digital A1 (.pfx) enviado pela tela Configuração, não por variável de ambiente: fica no banco
   (`cte_config`), com a senha cifrada (mesmo padrão das senhas das contas de e-mail). `lib/certificado.ts` abre
   o .pfx com node-forge (puro JS: o OpenSSL do Node recusa o RC2-40 que boa parte das ACs ainda usa) — mesma
